@@ -19,7 +19,17 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
     PlayerRoomStatus selfInfo;
 
     public bool testMode = false;
-    // Start is called before the first frame update
+
+    [SerializeField] GameObject Characters;
+    [SerializeField] GameObject CharacterSelected;
+    [SerializeField] GameObject SkillSelector;
+    [SerializeField] int skillIndex = -1;
+
+    public static RoomSceneManager Instance;
+    private void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
@@ -168,5 +178,30 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             SceneManager.LoadScene("GameScene");
         }
 
+    }
+
+    public void SetCharacter(int code, Sprite characterSprite)
+    {
+        CharacterSelected.GetComponentInChildren<Image>().sprite = characterSprite;
+        CharacterSelected.SetActive(true);
+        Characters.SetActive(false);
+        SkillSelector.SetActive(true);
+    }
+    public void OnClickBackToSelectCharacters()
+    {
+        Characters.SetActive(true);
+        CharacterSelected.GetComponentInChildren<Image>().sprite = null;
+        CharacterSelected.SetActive(false);
+        SkillSelector.SetActive(false);
+        SetSelectedSkill(0, -1, null);
+        SetSelectedSkill(1, -1, null);
+    }
+    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite)
+    {
+        
+    }
+    public int GetSkillIndex()
+    {
+        return skillIndex;
     }
 }
