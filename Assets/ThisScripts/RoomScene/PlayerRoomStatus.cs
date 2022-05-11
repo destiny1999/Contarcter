@@ -7,12 +7,13 @@ public class PlayerRoomStatus : MonoBehaviour
 {
     [SerializeField] Text playerName;
     [SerializeField] Image ready;
-    string userId;
+    public string userId;
 
-    public void SetStatus(string name, string ID)
+    public void SetStatus(string name, string ID, bool prepare)
     {
         playerName.text = name;
         userId = ID;
+        ready.gameObject.SetActive(prepare);
     }
     public string GetPlayerName()
     {
@@ -22,9 +23,9 @@ public class PlayerRoomStatus : MonoBehaviour
     {
         return userId;
     }
-    public void ChangePrepareStatus()
+    public void ChangePrepareStatus(bool status)
     {
-        ready.gameObject.SetActive(!ready.gameObject.activeSelf);
+        ready.gameObject.SetActive(status);
     }
     public bool GetPrepareOrNot()
     {

@@ -481,11 +481,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roomName: {fileID: 1288560238}
-  prepare: {fileID: 1662077700}
-  startGame: {fileID: 494400757}
+  buttonPrepare: {fileID: 1662077700}
+  buttonStartGame: {fileID: 494400757}
   playerStatusInRoom: {fileID: 5502451497628555647, guid: e3766dc546f6b0f4aa62aa40c6c317da, type: 3}
   playerList: {fileID: 257600237}
-  testMode: 1
+  selfMarkColor: {r: 0.9056604, g: 0.6312859, b: 0.10679956, a: 1}
+  testMode: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

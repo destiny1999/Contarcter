@@ -6,7 +6,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Linq;
 using UnityEngine.SceneManagement;
-
+using HashTable = ExitGames.Client.Photon.Hashtable;
 public class LobbySceneManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] InputField iptfPlayerName;
@@ -41,7 +41,18 @@ public class LobbySceneManager : MonoBehaviourPunCallbacks
     }
     public override void OnJoinedLobby()
     {
-        base.OnJoinedLobby();
+        if (!PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("prepare"))
+        {
+            HashTable prepareStatus = new HashTable();
+            prepareStatus.Add("prepare", false);
+            //PhotonNetwork.LocalPlayer.SetCustomProperties(prepareStatus);
+            PhotonNetwork.LocalPlayer.CustomProperties.Add("prepare", prepareStatus);
+        }
+        else
+        {
+            HashTable customProperties = PhotonNetwork.LocalPlayer.CustomProperties;
+            ((HashTable)customProperties["prepare"])["prepare"] = false;
+        }
     }
 
     public string GetRoomName()
@@ -55,8 +66,9 @@ public class LobbySceneManager : MonoBehaviourPunCallbacks
         print(roomName);
         if(roomName.Length > 0 && PhotonNetwork.LocalPlayer.NickName.Length > 0)
         {
-            PhotonNetwork.CreateRoom(roomName);
-            //PhotonNetwork.JoinRoom(roomName);
+            RoomOptions options = new RoomOptions();
+            options.PublishUserId = true;
+            PhotonNetwork.CreateRoom(roomName, options);
         }
     }
     public override void OnJoinRoomFailed(short returnCode, string message)
