@@ -13,6 +13,14 @@ public class GameManager : MonoBehaviourPunCallbacks
     HashTable startTime = new HashTable();
     HashTable currentTime = new HashTable();
     [SerializeField] Text timer;
+
+    [SerializeField] int siteCode;
+    [SerializeField] Text siteDescription;
+    [SerializeField] List<Material> allCharactersMaterial;
+    [SerializeField] Material selfCharacterMaterial;
+    [SerializeField] Material leftCharacterMaterial;
+    [SerializeField] Material rightCharacterMaterial;
+
     // Start is called before the first frame update
     void Start()
     {

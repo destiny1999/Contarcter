@@ -6,6 +6,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using HashTable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class RoomSceneManager : MonoBehaviourPunCallbacks
 {
@@ -23,7 +24,14 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
     [SerializeField] GameObject Characters;
     [SerializeField] GameObject CharacterSelected;
     [SerializeField] GameObject SkillSelector;
+    //[SerializeField] GameObject Skills;
+    [SerializeField] List<GameObject> allSkills; 
     [SerializeField] int skillIndex = -1;
+    [SerializeField] List<Image> skillBlocks = new List<Image>();
+    [SerializeField] GameObject skillInfoView;
+    HashTable professionInfo;
+
+    [SerializeField] GameObject tipsView;
 
     public static RoomSceneManager Instance;
     private void Awake()
@@ -32,10 +40,17 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
     }
     void Start()
     {
+        professionInfo = new HashTable();
         PhotonNetwork.AutomaticallySyncScene = true;
         InitRoomInfo();
     }
-
+    private void Update()
+    {
+        if (skillInfoView.activeSelf)
+        {
+            skillInfoView.transform.position = Input.mousePosition;
+        }
+    }
     public void InitRoomInfo()
     {
         //set room name
@@ -124,10 +139,28 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
 
     public void OnClickPrepare()
     {
+        if(skillBlocks[0].sprite == null || skillBlocks[1].sprite == null)
+        {
+            tipsView.transform.Find("Text").GetComponent<Text>().text = "Check role and skills";
+            tipsView.SetActive(true);
+            StartCoroutine(HideSomething(tipsView, 1.5f));
+            return;
+        }
+        HideAllSkills();
         buttonPrepare.GetComponentInChildren<Text>().text = buttonPrepare.GetComponentInChildren<Text>().text
            == "Prepare" ? "Cancel" : "Prepare";
 
         HashTable customProperties = PhotonNetwork.LocalPlayer.CustomProperties;
+
+        if (customProperties.ContainsKey("professionInfo"))
+        {
+            customProperties["professionInfo"] = professionInfo;
+        }
+        else
+        {
+            customProperties.Add("professionInfo", professionInfo);
+        }
+        
 
         ((HashTable)customProperties["prepare"])["prepare"] =
             !(bool)((HashTable)customProperties["prepare"])["prepare"];
@@ -182,26 +215,130 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
 
     public void SetCharacter(int code, Sprite characterSprite)
     {
+        professionInfo.Add("professsion", code);
         CharacterSelected.GetComponentInChildren<Image>().sprite = characterSprite;
         CharacterSelected.SetActive(true);
         Characters.SetActive(false);
+        InitialSkillBlocks(code);
         SkillSelector.SetActive(true);
+        skillIndex = 0;
+    }
+    void InitialSkillBlocks(int characterCode)
+    {
+        foreach(GameObject child in allSkills)
+        {
+            if(child.GetComponent<SkillSetting>().GetSkillOnwer() != characterCode && 
+                child.GetComponent<SkillSetting>().GetSkillOnwer() != -1)
+            {
+                child.transform.gameObject.SetActive(false);
+            }
+            else
+            {
+                child.transform.gameObject.SetActive(true);
+            }
+        }
+    }
+    void HideAllSkills()
+    {
+        foreach (GameObject child in allSkills)
+        {
+            child.transform.gameObject.SetActive(false);
+        }
     }
     public void OnClickBackToSelectCharacters()
     {
+        professionInfo = new HashTable();
         Characters.SetActive(true);
         CharacterSelected.GetComponentInChildren<Image>().sprite = null;
         CharacterSelected.SetActive(false);
         SkillSelector.SetActive(false);
-        SetSelectedSkill(0, -1, null);
-        SetSelectedSkill(1, -1, null);
+        SetSelectedSkill(0, -1, null, "");
+        SetSelectedSkill(1, -1, null, "");
     }
-    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite)
+    public void OnClickSkillIndex(int index )
     {
-        
+        skillIndex = index;
+    }
+    void SetTargetSKillCanBeSelected(string skillSpriteName)
+    {
+        foreach (GameObject child in allSkills)
+        {
+            if (child.transform.Find("Image").GetComponent<Image>().sprite.name == skillSpriteName)
+            {
+                child.SetActive(true);
+            }
+        }
+    }
+    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite, string skillName)
+    {
+        if (index == -1) return;
+        skillInfoView.SetActive(false);
+
+        if(skillBlocks[index].sprite != null)
+        {
+            SetTargetSKillCanBeSelected(skillBlocks[index].sprite.name);
+        }
+        if(index == 0)
+        {
+            if (professionInfo.ContainsKey("skill1"))
+            {
+                professionInfo["skill1"]=skillName;
+            }
+            else
+            {
+                professionInfo.Add("skill1", skillName);
+            }
+            
+        }
+        else if(index == 1)
+        {
+            if (professionInfo.ContainsKey("skill2"))
+            {
+                professionInfo["skill2"] = skillName;
+            }
+            else
+            {
+                professionInfo.Add("skill2", skillName);
+            }
+        }
+        skillBlocks[index].sprite = skillSprite;
+        if(index == 0)
+        {
+            if(skillBlocks[1].sprite == null)
+            {
+                skillIndex = 1;
+            }
+        }
     }
     public int GetSkillIndex()
     {
         return skillIndex;
+    }
+    public void ShowSkillInfoView(string skillName, string skillDescription)
+    {
+        var infoName = skillInfoView.transform.GetComponentsInChildren<Text>().
+                    Where(child => child.transform.name == "Name").ToArray();
+        
+        var infoDescription = skillInfoView.transform.GetComponentsInChildren<Text>().
+                    Where(child => child.transform.name == "Description").ToArray();
+
+        infoName[0].text = skillName;
+        infoDescription[0].text = skillDescription;
+
+        skillInfoView.SetActive(true);
+    }
+    public void HideSkillInfoView()
+    {
+        skillInfoView.SetActive(false);
+    }
+    IEnumerator HideSomething(GameObject target, float afterTime)
+    {
+        float time = 0;
+        while(time < afterTime)
+        {
+            time += Time.deltaTime * 1;
+            yield return 1;
+        }
+        target.SetActive(false);
     }
 }
