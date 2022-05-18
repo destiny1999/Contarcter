@@ -15,9 +15,9 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
+  - cardBackground
+  - cardRole
+  - cardFrame
   - 
   - 
   - 

@@ -16,10 +16,12 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     [SerializeField] int siteCode;
     [SerializeField] Text siteDescription;
+    [SerializeField] Material siteMainMark;
     [SerializeField] List<Material> allCharactersMaterial;
     [SerializeField] Material selfCharacterMaterial;
     [SerializeField] Material leftCharacterMaterial;
     [SerializeField] Material rightCharacterMaterial;
+    
 
     // Start is called before the first frame update
     void Start()
