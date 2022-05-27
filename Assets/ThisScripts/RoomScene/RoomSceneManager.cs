@@ -201,7 +201,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
                 if (player.GetComponent<PlayerRoomStatus>().
                     GetUserId() != PhotonNetwork.MasterClient.UserId)
                 {
-                    print(player.GetComponent<PlayerRoomStatus>().GetPrepareOrNot());
+                    //print(player.GetComponent<PlayerRoomStatus>().GetPrepareOrNot());
                     if (!player.GetComponent<PlayerRoomStatus>().GetPrepareOrNot())
                     {
                         return;
@@ -252,8 +252,8 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
         CharacterSelected.GetComponentInChildren<Image>().sprite = null;
         CharacterSelected.SetActive(false);
         SkillSelector.SetActive(false);
-        SetSelectedSkill(0, -1, null, "");
-        SetSelectedSkill(1, -1, null, "");
+        SetSelectedSkill(0, -1, null, "", "");
+        SetSelectedSkill(1, -1, null, "", "");
     }
     public void OnClickSkillIndex(int index )
     {
@@ -269,7 +269,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             }
         }
     }
-    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite, string skillName)
+    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite, string skillName, string descritpion)
     {
         if (index == -1) return;
         skillInfoView.SetActive(false);
@@ -283,10 +283,12 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             if (professionInfo.ContainsKey("skill1"))
             {
                 professionInfo["skill1"]=skillName;
+                professionInfo["skill1Description"] = descritpion;
             }
             else
             {
                 professionInfo.Add("skill1", skillName);
+                professionInfo.Add("skill1Description", descritpion);
             }
             
         }
@@ -295,10 +297,12 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             if (professionInfo.ContainsKey("skill2"))
             {
                 professionInfo["skill2"] = skillName;
+                professionInfo["skill2Description"] = descritpion;
             }
             else
             {
                 professionInfo.Add("skill2", skillName);
+                professionInfo.Add("skill2Description", descritpion);
             }
         }
         skillBlocks[index].sprite = skillSprite;

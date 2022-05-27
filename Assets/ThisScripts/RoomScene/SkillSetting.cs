@@ -10,17 +10,19 @@ public class SkillSetting : MonoBehaviour
     [SerializeField] int skillCode;
     [SerializeField] string skillDescription;
     [SerializeField] string skillName;
+    [SerializeField] string spriteName;
     [SerializeField] Sprite skillImage;
     // Start is called before the first frame update
     void Start()
     {
         skillImage = this.GetComponentsInChildren<Image>().ToList()[1].sprite;
+        spriteName = skillImage.name;
     }
 
     public void OnClickSkill()
     {
         int skillIndex = RoomSceneManager.Instance.GetSkillIndex();
-        RoomSceneManager.Instance.SetSelectedSkill(skillIndex, skillCode, skillImage, skillName);
+        RoomSceneManager.Instance.SetSelectedSkill(skillIndex, skillCode, skillImage, spriteName, skillDescription);
         this.gameObject.SetActive(false);
     }
     public int GetSkillOnwer()
