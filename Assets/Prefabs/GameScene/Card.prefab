@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8363336761184192327}
   - component: {fileID: 4335277425031736293}
   - component: {fileID: 2764271724753546351}
+  - component: {fileID: 7952931308215862697}
   m_Layer: 0
   m_Name: Card
   m_TagString: Untagged
@@ -114,6 +115,25 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 8.19, y: 14.26, z: 0.19999999}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!95 &7952931308215862697
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962094150180240717}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 80ea4ee531a5c2f40a8f55d6fbb566d3, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &3752325438084896759
 GameObject:
   m_ObjectHideFlags: 0

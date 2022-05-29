@@ -11,13 +11,32 @@ public class CardSetting : MonoBehaviour
     [SerializeField] int value;
     [SerializeField] SpriteRenderer valueMark;
     [SerializeField] SpriteRenderer frame;
+    Animator cardAni;
     private void Start()
     {
+        cardAni = this.GetComponent<Animator>();
         SetOriginalPosition();
+    }
+    private void OnMouseEnter()
+    {
+        SpriteRenderer[] spriteRenders = this.GetComponentsInChildren<SpriteRenderer>();
+        for (int i = 0 ; i < spriteRenders.Length; i++)
+        {
+            spriteRenders[i].sortingOrder = 3 + i;
+        }
+        cardAni.SetBool("Selected", true);
+    }
+    private void OnMouseExit()
+    {
+        SpriteRenderer[] spriteRenders = this.GetComponentsInChildren<SpriteRenderer>();
+        for (int i = 0; i < spriteRenders.Length; i++)
+        {
+            spriteRenders[i].sortingOrder = i;
+        }
+        cardAni.SetBool("Selected", false);
     }
     public void OnMouseDown()
     {
-        print("mouse down");
         screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
 
         offset = gameObject.transform.position - Camera.main.ScreenToWorldPoint
@@ -30,11 +49,16 @@ public class CardSetting : MonoBehaviour
                                              screenPoint.z);
 
         Vector3 curPosition = Camera.main.ScreenToWorldPoint(curScreenPoint) + offset;
-        transform.position = new Vector3(curPosition.x, curPosition.y, -2);
+        transform.position = curPosition;
     }
     private void OnMouseUp()
     {
         if (!use) BackToOriginalPosition();
+        else
+        {
+            GameManager.Instance.SetSelectedCard(value);
+            this.gameObject.SetActive(false);
+        }
     }
     void SetOriginalPosition()
     {
@@ -52,5 +76,9 @@ public class CardSetting : MonoBehaviour
     {
         this.value = value;
         this.valueMark.sprite = valueMark;
+    }
+    public void SetUse(bool status)
+    {
+        use = status;
     }
 }

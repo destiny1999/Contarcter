@@ -5,6 +5,7 @@ using Photon.Pun;
 using HashTable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using System.Linq;
+using Photon.Realtime;
 public class GameManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] double prepareTime;
@@ -33,9 +34,17 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     [SerializeField] GameObject decks;
 
+    Dictionary<string, Player> useUserIdGetPlayer = new Dictionary<string, Player>();
+
     HashTable professionInfo;
     int characterCode;
 
+    public static GameManager Instance;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -49,6 +58,13 @@ public class GameManager : MonoBehaviourPunCallbacks
             startTimeValue = PhotonNetwork.Time;
             StartCoroutine(SubTime());
             // set site info and wait all player loading OK
+
+            for(int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
+            {
+                useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[i].UserId,
+                    PhotonNetwork.CurrentRoom.Players[i]);
+            }
+
             int siteCode = Random.Range(0, 1);
             photonView.RPC("SetSiteInfo", RpcTarget.All, siteCode);
         }
@@ -88,6 +104,23 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
 
     }
+    public void SetSelectedCard(int value)
+    {
+        string[] sendValue = new string[2];
+        sendValue[0] = PhotonNetwork.LocalPlayer.UserId;
+        sendValue[1] = value+"";
+        photonView.RPC("SetSelectedCardToAll", RpcTarget.All, sendValue);
+    }
+    [PunRPC]
+    public void SetSelectedCardToAll(string[] cardValue)
+    {
+        // set the card in SelectedCardInfo(script)
+        // this script contain userId, value, animation
+        // each player contain its selectedCardInfo at the first
+        // so can know which player win this turn
+        // if master client should judge the setted nums
+        // if setted nums == 3, go to next part, "judge"
+    }
     Sprite UseSkillNameGetSprite(string spriteName)
     {
         Sprite targetSprite = null;
@@ -101,6 +134,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         return targetSprite;
     }
+
     IEnumerator SubTime()
     {
         while(prepareTime > 0 && prepareStep)
