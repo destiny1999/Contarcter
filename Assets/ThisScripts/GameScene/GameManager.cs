@@ -8,6 +8,9 @@ using System.Linq;
 using Photon.Realtime;
 public class GameManager : MonoBehaviourPunCallbacks
 {
+    int playerNums = 3;
+    [SerializeField] int testPlayerNuums;
+    [SerializeField] bool testMode = false;
     [SerializeField] double prepareTime;
     bool prepareStep = true;
     double startTimeValue;
@@ -41,9 +44,26 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     public static GameManager Instance;
 
+    [SerializeField] List<PlayerInfo> allPlayersInfo;
+    Dictionary<string, GameObject> useUserIdGetPlayerGameObject = new Dictionary<string, GameObject>();
+
+    [SerializeField] List<GameObject> allSkillsFire;
+
+    int loadingOKPlayer = 0;
+
+    [SerializeField] double cardSettedConsiderTime = 30;
+    int settedCards = 0;// each turn how many player setted card
+
+    [SerializeField] double skillSettedConsiderTime = 10;
+
+    [SerializeField] List<GameObject> skillSettedOrder;
+
+    // 0 card selected consider, 1 skilled selected consider
+    [SerializeField] List<bool> eachStepsStatus;
     private void Awake()
     {
         Instance = this;
+        if (testMode) playerNums = testPlayerNuums;
     }
     // Start is called before the first frame update
     void Start()
@@ -55,21 +75,77 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsMasterClient)
         {
             // prepare time
-            startTimeValue = PhotonNetwork.Time;
-            StartCoroutine(SubTime());
+            //startTimeValue = PhotonNetwork.Time;
+            //StartCoroutine(SubTime());
             // set site info and wait all player loading OK
 
             for(int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[i].UserId,
-                    PhotonNetwork.CurrentRoom.Players[i]);
+                useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[i+1].UserId,
+                    PhotonNetwork.CurrentRoom.Players[i+1]);
             }
 
             int siteCode = Random.Range(0, 1);
             photonView.RPC("SetSiteInfo", RpcTarget.All, siteCode);
+            StartCoroutine(WaitAllPlayerLoading());
         }
         SetSelfPlayerData();
+        SetAllPlayerInfo();
     }
+    IEnumerator WaitAllPlayerLoading()
+    {
+        // wait all player loading OK.
+        while(loadingOKPlayer < playerNums)
+        {
+            yield return 1;
+        }
+        print("all player OK");
+        TurnStart();
+    }
+    void TurnStart()
+    {
+        print("turn start");
+        // only master client into this
+        StartCoroutine(SubTime(cardSettedConsiderTime, 0));
+        photonView.RPC("SetCardCanBeSettedStatus", RpcTarget.All, true);
+    }
+    void SetAllPlayerInfo()
+    {
+        int localIndex = -1;
+        for(int i = 0; i<playerNums; i++)
+        {
+            allPlayersInfo[i].GetComponent<PlayerInfo>().userId =
+                PhotonNetwork.CurrentRoom.Players[i+1].UserId;
+            if(PhotonNetwork.LocalPlayer.UserId == PhotonNetwork.CurrentRoom.Players[i+1].UserId)
+            {
+                localIndex = i;
+            }
+            allPlayersInfo[i].GetComponent<PlayerInfo>().winGameCount = 0;
+            allPlayersInfo[i].GetComponent<PlayerInfo>().winTurnCount = 0;
+            allPlayersInfo[i].GetComponent<PlayerInfo>().score = 0;
+            allPlayersInfo[i].GetComponent<PlayerInfo>().showCharacter = false;
+        }
+        if(localIndex != 0)
+        {
+            string id = allPlayersInfo[0].GetComponent<PlayerInfo>().userId;
+            allPlayersInfo[0].GetComponent<PlayerInfo>().userId =
+                PhotonNetwork.LocalPlayer.UserId;
+            allPlayersInfo[localIndex].GetComponent<PlayerInfo>().userId = id;
+        }
+        for(int i = 0; i< playerNums; i++)
+        {
+            useUserIdGetPlayerGameObject.Add(
+                allPlayersInfo[i].GetComponent<PlayerInfo>().userId,
+                allPlayersInfo[i].gameObject);
+        }
+        photonView.RPC("SetLoadingOK", RpcTarget.MasterClient);
+    }
+    [PunRPC]
+    public void SetLoadingOK()
+    {
+        loadingOKPlayer++;
+    }
+
     [PunRPC]
     public void SetSiteInfo(int siteCode)
     {
@@ -112,7 +188,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         photonView.RPC("SetSelectedCardToAll", RpcTarget.All, sendValue);
     }
     [PunRPC]
-    public void SetSelectedCardToAll(string[] cardValue)
+    public void SetSelectedCardToAll(string[] cardInfo)
     {
         // set the card in SelectedCardInfo(script)
         // this script contain userId, value, animation
@@ -120,6 +196,85 @@ public class GameManager : MonoBehaviourPunCallbacks
         // so can know which player win this turn
         // if master client should judge the setted nums
         // if setted nums == 3, go to next part, "judge"
+
+        string id = cardInfo[0];
+        int value = int.Parse(cardInfo[1]);
+
+        useUserIdGetPlayerGameObject[id].GetComponentInChildren<SelectedCardInfo>().value = value;
+        useUserIdGetPlayerGameObject[id].GetComponentInChildren<SelectedCardInfo>().SetCardBack();
+        settedCards++;
+        if (PhotonNetwork.IsMasterClient)
+        {
+            if(settedCards == playerNums)
+            {
+                eachStepsStatus[0] = false;
+                photonView.RPC("SetSkillCanBeSettedStatus", RpcTarget.All, true);
+                photonView.RPC("SetCardCanBeSettedStatus", RpcTarget.All, false);
+                ToSetSkillStep();
+                settedCards = 0;
+            }
+        }
+    }
+    [PunRPC]
+    public void SetCardCanBeSettedStatus(bool status)
+    {
+        CardsSortManager.Instance.SetCardCanBeDraggingStatus(status);
+    }
+    [PunRPC]
+    public void SetSkillCanBeSettedStatus(bool status)
+    {
+        SkillInfo[] allSkills = useUserIdGetPlayerGameObject[PhotonNetwork.LocalPlayer.UserId].
+            GetComponentsInChildren<SkillInfo>();
+
+        for(int i = 0; i<allSkills.Length; i++)
+        {
+            allSkills[i].SetDraggingStatus(status);
+        }
+    }
+    void ToSetSkillStep()
+    {
+        // only master client can into this function
+        // deal with skill setted, should had skill animation manager, play with setted order
+        // show card
+        // deal with skill
+        // finall compare the result card
+        // set the result to all player
+        // go to next turn
+        eachStepsStatus[1] = true;
+        StartCoroutine(JudgeSetSkillStatus());
+        print("sub skill time and the time = " + skillSettedConsiderTime);
+        StartCoroutine(SubTime(skillSettedConsiderTime, 1));
+    }
+    IEnumerator JudgeSetSkillStatus()
+    {
+        skillSettedOrder = new List<GameObject>();
+        while (eachStepsStatus[1])
+        {
+            if(skillSettedOrder.Count == PhotonNetwork.CurrentRoom.PlayerCount)
+            {
+                eachStepsStatus[1] = false;
+            }
+            yield return 1;
+        }
+    }
+    [PunRPC]
+    public void SettedSkill(string[] skillInfo)
+    {
+        // client show fire and master should record the order
+        string id = skillInfo[0];
+        string skillName = skillInfo[1];
+        int skillFireCode = int.Parse(skillInfo[2]);
+
+        Transform skillSettedPosition = useUserIdGetPlayerGameObject[id].
+            transform.Find("SkillFirePosition");
+
+        GameObject skillFire = GameObject.Instantiate
+            (allSkillsFire[skillFireCode], skillSettedPosition);
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            skillSettedOrder.Add(skillFire);
+        }
     }
     Sprite UseSkillNameGetSprite(string spriteName)
     {
@@ -135,35 +290,39 @@ public class GameManager : MonoBehaviourPunCallbacks
         return targetSprite;
     }
 
-    IEnumerator SubTime()
+    IEnumerator SubTime(double countDownTime, int stepIndex)
     {
-        while(prepareTime > 0 && prepareStep)
+        eachStepsStatus[stepIndex] = true;
+        startTimeValue = PhotonNetwork.Time;
+        var remainingTime = countDownTime;
+        print("countDownTime = " + countDownTime);
+        while (remainingTime > 0 && eachStepsStatus[stepIndex])
         {
             var currentTimeValue = PhotonNetwork.Time;
             var passTime = currentTimeValue - startTimeValue;
-
-            var remainingTime = prepareTime - passTime;
-            if (!currentTime.ContainsKey("prepareStepRemainingTime"))
+            print("passTime = " + passTime);
+            remainingTime = countDownTime - passTime;
+            print("remaingTime = " + remainingTime);
+            if (!currentTime.ContainsKey("remainingTime"))
             {
-                currentTime.Add("prepareStepRemainingTime", remainingTime);
+                currentTime.Add("remainingTime", remainingTime);
             }
             else
             {
-                currentTime["prepareStepRemainingTime"] = remainingTime;
+                currentTime["remainingTime"] = remainingTime;
             }
             PhotonNetwork.CurrentRoom.SetCustomProperties(currentTime);
             yield return 1;
         }
+        eachStepsStatus[stepIndex] = false;
+        //photonView.RPC("SetSkillCanBeSettedStatus", RpcTarget.All, false);
     }
     public override void OnRoomPropertiesUpdate(HashTable propertiesThatChanged)
     {
-        if (prepareStep)
+        if (propertiesThatChanged["remainingTime"] != null)
         {
-            if (propertiesThatChanged["prepareStepRemainingTime"] != null)
-            {
-                var remainingTime = (int)(double)propertiesThatChanged["prepareStepRemainingTime"];
-                timer.text = remainingTime + "";
-            }
+            var remainingTime = (int)(double)propertiesThatChanged["remainingTime"];
+            timer.text = remainingTime + "";
         }
     }
 }

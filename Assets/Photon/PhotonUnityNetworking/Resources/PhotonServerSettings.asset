@@ -40,6 +40,12 @@ MonoBehaviour:
   - Fire
   - RespawnSpaceship
   - SetSiteInfo
+  - SetSelectedCardToAll
+  - SettedSkill
+  - SetSkillCanBeSetted
+  - SetCardCanBeSettedStatus
+  - SetSkillCanBeSettedStatus
+  - SetLoadingOK
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

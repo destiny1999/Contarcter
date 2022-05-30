@@ -12,10 +12,17 @@ public class CardSetting : MonoBehaviour
     [SerializeField] SpriteRenderer valueMark;
     [SerializeField] SpriteRenderer frame;
     Animator cardAni;
+    int cardStatus = 0; // 0 in the hand, -1 in the grave
+    bool canDrag = false;
     private void Start()
     {
         cardAni = this.GetComponent<Animator>();
         SetOriginalPosition();
+    }
+    public void InitialThisCard()
+    {
+        cardStatus = 0;
+        this.gameObject.SetActive(true);
     }
     private void OnMouseEnter()
     {
@@ -44,12 +51,19 @@ public class CardSetting : MonoBehaviour
     }
     private void OnMouseDrag()
     {
-        Vector3 curScreenPoint = new Vector3(Input.mousePosition.x, 
-                                             Input.mousePosition.y, 
+        if (canDrag)
+        {
+            Vector3 curScreenPoint = new Vector3(Input.mousePosition.x,
+                                             Input.mousePosition.y,
                                              screenPoint.z);
 
-        Vector3 curPosition = Camera.main.ScreenToWorldPoint(curScreenPoint) + offset;
-        transform.position = curPosition;
+            Vector3 curPosition = Camera.main.ScreenToWorldPoint(curScreenPoint) + offset;
+            transform.position = curPosition;
+        }
+    }
+    public void SetCanDragStatus(bool status)
+    {
+        canDrag = status;
     }
     private void OnMouseUp()
     {
@@ -57,10 +71,12 @@ public class CardSetting : MonoBehaviour
         else
         {
             GameManager.Instance.SetSelectedCard(value);
+            cardStatus = -1;
             this.gameObject.SetActive(false);
+            CardsSortManager.Instance.SortCard();
         }
     }
-    void SetOriginalPosition()
+    public void SetOriginalPosition()
     {
         originalPosition = this.transform.localPosition;
     }

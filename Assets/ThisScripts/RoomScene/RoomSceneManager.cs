@@ -166,6 +166,12 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             !(bool)((HashTable)customProperties["prepare"])["prepare"];
         
         PhotonNetwork.LocalPlayer.SetCustomProperties(customProperties);
+
+        if (testMode)
+        {
+            buttonPrepare.transform.gameObject.SetActive(false);
+            buttonStartGame.transform.gameObject.SetActive(true);
+        }
     }
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
