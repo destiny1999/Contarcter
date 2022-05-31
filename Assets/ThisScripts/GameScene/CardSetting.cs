@@ -14,6 +14,7 @@ public class CardSetting : MonoBehaviour
     Animator cardAni;
     int cardStatus = 0; // 0 in the hand, -1 in the grave
     bool canDrag = false;
+    public bool testDrag = false;
     private void Start()
     {
         cardAni = this.GetComponent<Animator>();
@@ -51,7 +52,7 @@ public class CardSetting : MonoBehaviour
     }
     private void OnMouseDrag()
     {
-        if (canDrag)
+        if (canDrag || testDrag)
         {
             Vector3 curScreenPoint = new Vector3(Input.mousePosition.x,
                                              Input.mousePosition.y,
@@ -74,6 +75,7 @@ public class CardSetting : MonoBehaviour
             cardStatus = -1;
             this.gameObject.SetActive(false);
             CardsSortManager.Instance.SortCard();
+            SiteManager.Instance.SetcardIn(false);
         }
     }
     public void SetOriginalPosition()

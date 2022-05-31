@@ -169,8 +169,12 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
 
         if (testMode)
         {
-            buttonPrepare.transform.gameObject.SetActive(false);
-            buttonStartGame.transform.gameObject.SetActive(true);
+            if (PhotonNetwork.IsMasterClient)
+            {
+                buttonPrepare.transform.gameObject.SetActive(false);
+                buttonStartGame.transform.gameObject.SetActive(true);
+            }
+            
         }
     }
 
@@ -258,8 +262,8 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
         CharacterSelected.GetComponentInChildren<Image>().sprite = null;
         CharacterSelected.SetActive(false);
         SkillSelector.SetActive(false);
-        SetSelectedSkill(0, -1, null, "", "");
-        SetSelectedSkill(1, -1, null, "", "");
+        SetSelectedSkill(0, -1, null, "", "", -2);
+        SetSelectedSkill(1, -1, null, "", "", -2);
     }
     public void OnClickSkillIndex(int index )
     {
@@ -275,7 +279,8 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             }
         }
     }
-    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite, string skillName, string descritpion)
+    public void SetSelectedSkill(int index, int skillCode, Sprite skillSprite, string skillName,
+                                 string descritpion, int skillOwner)
     {
         if (index == -1) return;
         skillInfoView.SetActive(false);
@@ -290,11 +295,13 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             {
                 professionInfo["skill1"]=skillName;
                 professionInfo["skill1Description"] = descritpion;
+                professionInfo["skillOwner1"] = skillOwner;
             }
             else
             {
                 professionInfo.Add("skill1", skillName);
                 professionInfo.Add("skill1Description", descritpion);
+                professionInfo.Add("skillOwner1", skillOwner);
             }
             
         }
@@ -304,11 +311,13 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             {
                 professionInfo["skill2"] = skillName;
                 professionInfo["skill2Description"] = descritpion;
+                professionInfo["skillOwner2"] = skillOwner;
             }
             else
             {
                 professionInfo.Add("skill2", skillName);
                 professionInfo.Add("skill2Description", descritpion);
+                professionInfo.Add("skillOwner2", skillOwner);
             }
         }
         skillBlocks[index].sprite = skillSprite;

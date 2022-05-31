@@ -22,7 +22,7 @@ public class SkillSetting : MonoBehaviour
     public void OnClickSkill()
     {
         int skillIndex = RoomSceneManager.Instance.GetSkillIndex();
-        RoomSceneManager.Instance.SetSelectedSkill(skillIndex, skillCode, skillImage, spriteName, skillDescription);
+        RoomSceneManager.Instance.SetSelectedSkill(skillIndex, skillCode, skillImage, spriteName, skillDescription, skillOnwer);
         this.gameObject.SetActive(false);
     }
     public int GetSkillOnwer()

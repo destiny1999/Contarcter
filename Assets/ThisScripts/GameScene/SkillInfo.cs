@@ -6,6 +6,10 @@ public class SkillInfo : MonoBehaviour
 {
     [SerializeField] bool canDrag = false;
     [SerializeField] bool showDetail = false;
+    public int skillOwner { get; set; }
+    public string skillName { get; set; }
+    public string skillDescription { get; set; }
+    public int skillCode { get; set; }
     bool use = false;
     Vector3 originalPosition;
     Vector3 screenPoint;
@@ -17,6 +21,15 @@ public class SkillInfo : MonoBehaviour
     public void SetDraggingStatus(bool status)
     {
         canDrag = status;
+        if (!canDrag)
+        {
+            use = false;
+            this.transform.localPosition = originalPosition;
+        }
+    }
+    public void SetUse(bool status)
+    {
+        use = status;
     }
     private void OnMouseUp()
     {
@@ -26,7 +39,9 @@ public class SkillInfo : MonoBehaviour
         }
         else
         {
-
+            GameManager.Instance.SetSelectedSkill(skillName, skillOwner);
+            this.gameObject.SetActive(false);
+            SiteManager.Instance.SetcardIn(false);
         }
     }
     public void OnMouseDown()

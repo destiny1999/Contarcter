@@ -137,7 +137,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2074202821821499064}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -121.2, y: -71.2, z: 0}
+  m_LocalPosition: {x: -121.2, y: -71.2, z: 141}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 5126930082746690882}
@@ -189,6 +189,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8d6e85297aac314aa53809bdd490ee2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  allSkills: []
 --- !u!1 &5126930083239941246
 GameObject:
   m_ObjectHideFlags: 0
@@ -475,9 +476,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6116656348916231361}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5aa9c05f5cfd3514f8a73f814c5fabb6, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -498,8 +499,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93cf05d6e98ce8642ae6482164ac6f40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  showCardBackground: {fileID: 21300000, guid: e7aea6e9517dac048978f97f8ab71d7a, type: 3}
   cardBack: {fileID: 21300000, guid: 302ff79e166de084b839817b4fae036e, type: 3}
   background: {fileID: 4515250981724650472}
   frame: {fileID: 8106710010142375749}
   valueMark: {fileID: 8598891253617572650}
   userID: 
+  changeSizeSpeed: 30

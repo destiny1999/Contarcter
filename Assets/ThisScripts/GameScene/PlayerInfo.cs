@@ -9,6 +9,7 @@ public class PlayerInfo : MonoBehaviour
     [SerializeField] public int score { get; set; }
     [SerializeField] public int winGameCount { get; set; }
     [SerializeField] public bool showCharacter { get; set; }
+    [SerializeField] public int professionCode { get; set; }
 
     [SerializeField] List<GameObject> allSkills;
 

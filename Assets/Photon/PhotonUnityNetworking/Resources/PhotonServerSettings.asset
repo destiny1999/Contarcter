@@ -46,6 +46,10 @@ MonoBehaviour:
   - SetCardCanBeSettedStatus
   - SetSkillCanBeSettedStatus
   - SetLoadingOK
+  - SetSelectedSkillToAll
+  - AnimationOK
+  - StartTimerAnimation
+  - ShowSelectedCard
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

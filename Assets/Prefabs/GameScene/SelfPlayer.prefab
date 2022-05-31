@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3857042420543440196}
   m_Layer: 0
   m_Name: skill3
-  m_TagString: Untagged
+  m_TagString: skill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -135,7 +135,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1948582868427189037}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -120.5, y: -82.9, z: 0}
+  m_LocalPosition: {x: -121.6, y: -85, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 7433175862299282720}
@@ -242,7 +242,7 @@ GameObject:
   - component: {fileID: 7115752848580709692}
   m_Layer: 0
   m_Name: skill1
-  m_TagString: Untagged
+  m_TagString: skill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -353,7 +353,7 @@ GameObject:
   - component: {fileID: 6244302393189529733}
   m_Layer: 0
   m_Name: skill5
-  m_TagString: Untagged
+  m_TagString: skill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -464,7 +464,7 @@ GameObject:
   - component: {fileID: 2518026962161222346}
   m_Layer: 0
   m_Name: skill2
-  m_TagString: Untagged
+  m_TagString: skill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -657,7 +657,7 @@ GameObject:
   - component: {fileID: 5541184343614019849}
   m_Layer: 0
   m_Name: skill4
-  m_TagString: Untagged
+  m_TagString: skill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -991,7 +991,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7086602296613023724}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.8, y: 64.8, z: 0}
+  m_LocalPosition: {x: 5.8, y: 64.8, z: 141}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 6981336832568249173}
@@ -1109,7 +1109,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 8.19, y: 14.26}
+  m_Size: {x: 10.35, y: 17.5}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 0
@@ -1136,9 +1136,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8942003322395802208}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5aa9c05f5cfd3514f8a73f814c5fabb6, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1159,11 +1159,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93cf05d6e98ce8642ae6482164ac6f40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  showCardBackground: {fileID: 21300000, guid: e7aea6e9517dac048978f97f8ab71d7a, type: 3}
   cardBack: {fileID: 21300000, guid: 302ff79e166de084b839817b4fae036e, type: 3}
   background: {fileID: 6560439844795296968}
   frame: {fileID: 738719893344704934}
   valueMark: {fileID: 1489252279514001108}
   userID: 
+  changeSizeSpeed: 30
 --- !u!1001 &586870580852491587
 PrefabInstance:
   m_ObjectHideFlags: 0

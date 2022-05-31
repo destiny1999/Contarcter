@@ -8,6 +8,12 @@ public class SiteManager : MonoBehaviour
     [SerializeField] GameObject siteMark;
     bool cardIn = false;
     Animator markAni;
+
+    public static SiteManager Instance;
+    private void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
         markAni = siteMark.GetComponent<Animator>();
@@ -28,11 +34,29 @@ public class SiteManager : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         cardIn = true;
-        collision.transform.GetComponent<CardSetting>().SetUse(true);
+        if (collision.transform.CompareTag("card"))
+        {
+            collision.transform.GetComponent<CardSetting>().SetUse(true);
+        }
+        else if (collision.transform.CompareTag("skill"))
+        {
+            collision.transform.GetComponent<SkillInfo>().SetUse(true);
+        }
     }
     private void OnCollisionExit(Collision collision)
     {
         cardIn = false;
-        collision.transform.GetComponent<CardSetting>().SetUse(false);
+        if (collision.transform.CompareTag("card"))
+        {
+            collision.transform.GetComponent<CardSetting>().SetUse(false);
+        }
+        else if (collision.transform.CompareTag("skill"))
+        {
+            collision.transform.GetComponent<SkillInfo>().SetUse(false);
+        }
+    }
+    public void SetcardIn(bool status)
+    {
+        cardIn = status;
     }
 }

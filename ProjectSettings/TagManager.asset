@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Bullet
   - skillBlock
+  - card
+  - skill
   layers:
   - Default
   - TransparentFX
