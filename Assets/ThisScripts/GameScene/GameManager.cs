@@ -6,6 +6,10 @@ using HashTable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using System.Linq;
 using Photon.Realtime;
+using UnityEngine.Video;
+using System;
+using Random = UnityEngine.Random;
+
 public class GameManager : MonoBehaviourPunCallbacks
 {
     int playerNums = 3;
@@ -66,6 +70,11 @@ public class GameManager : MonoBehaviourPunCallbacks
     [SerializeField] List<bool> eachStepsStatus;
 
     [SerializeField] Animator timerAnimator;
+    [SerializeField] VideoPlayer videoPlayer;
+    [SerializeField] GameObject showVideoObject;
+    [SerializeField] List<VideoClip> allVideoClips;
+    
+    Dictionary<string, VideoClip> useClipsNameGetClips = new Dictionary<string, VideoClip>();
     int animationOK = 0;
     private void Awake()
     {
@@ -86,6 +95,12 @@ public class GameManager : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
+
+        foreach(VideoClip clip in allVideoClips)
+        {
+            useClipsNameGetClips.Add(clip.name, clip);
+        }
+
         professionInfo = (HashTable)PhotonNetwork.LocalPlayer.CustomProperties["professionInfo"];
         characterCode = (int)professionInfo["professsion"];
 
@@ -212,7 +227,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     public void SetSelectedSkill(string skillName, int skillOwner)
     {
         // 0 user id, 1 card name(which use for deal with skill), 2 fireMark, 3 skillOwner
-        string[] sendValue = new string[3];
+        string[] sendValue = new string[4];
         sendValue[0] = PhotonNetwork.LocalPlayer.UserId;
         sendValue[1] = skillName;
         sendValue[2] = allPlayersInfo[0].showCharacter == true ? skillOwner+"" : 6+"";
@@ -231,9 +246,16 @@ public class GameManager : MonoBehaviourPunCallbacks
         Transform skillFirePosition = useUserIdGetPlayerGameObject[id].
             transform.Find("SkillFirePosition");
 
+        // when get skill fire should know skill owner to judge show the character or not
+        // and should know the skill name or code to execute the skill
+
+
         GameObject skillFire = Instantiate(allSkillsFire[fireMark], skillFirePosition);
         skillFire.transform.localPosition = Vector3.zero;
-        skillFire.name = name + owner;
+        skillFire.name = id + "_" + name + "_" + owner;
+
+        useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().SetSkillFire(skillFire);
+
         if (PhotonNetwork.IsMasterClient)
         {
             skillSettedOrder.Add(skillFire);
@@ -388,16 +410,109 @@ public class GameManager : MonoBehaviourPunCallbacks
         // excute a skill animation
         // deal with skill animation, if had other animation, show other
         // deal with excute skill
+        // skillsettedOrder's name = skillName + skill owner, if null skillName = "" owner = -2 -1 mean common not profession
 
+        // if destroy object while at foreach should setting the object info into other list and deal with data only
+        List<string> userIDs = new List<string>();
+        List<string> skillNames = new List<string>();
+        List<int> skillOwners = new List<int>();
+        int skillFireNums = skillSettedOrder.Count;
+
+        foreach(GameObject skillFire in skillSettedOrder)
+        {
+            var skillInfo = skillFire.name.Split('_');
+
+            // setted the info into data type
+            if (skillInfo.Count() > 2)
+            {
+                userIDs.Add(skillInfo[0]);
+                skillNames.Add(skillInfo[1]);
+                skillOwners.Add(int.Parse(skillInfo[2]));
+            }
+            else
+            {
+                userIDs.Add(skillInfo[0]);
+                skillNames.Add(" ");
+                skillOwners.Add(int.Parse(skillInfo[2]));
+            }
+
+            // if count < 2 mean had skill owner -2 and user id, the fake skill, other mean true skill
+            if(skillInfo.Count() > 2)
+            {
+                // skillFire.name = id + "_" + name + "_" + owner;
+                string userId = skillInfo[0];
+                string skillName = skillInfo[1];
+                int skillOwner = int.Parse(skillInfo[2]);
+
+                // profession skill
+                if(skillOwner != -1)
+                {
+                    // deal with first use profession skill and change fire and show character
+                    if (!useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().showCharacter)
+                    {
+                        string[] sendValue = new string[3];
+
+                        sendValue[0] = userId;
+                        sendValue[1] = skillOwner+"";
+                        sendValue[2] = skillFire.name;
+
+                        photonView.RPC("ChangeCharacterSpriteAndFire", RpcTarget.All, sendValue);
+
+                    }
+                }
+            }
+        }
+        // deal with skills
+
+        // userid, skillnums = animation type(move to center, split to two, queue),animation trigger code
+
+        // each fire should burn then disappear or burnning
+        List<string> skillAnimationList = new List<string>();
+
+        for(int i = 0; i<userIDs.Count; i++)
+        {
+            skillAnimationList.Add(userIDs[i]);
+        }
+        
+        skillAnimationList.Add(skillFireNums+"");
+        print("skillFireNums = " + skillFireNums);
+        // animation trigger, disappear or burning
+        for(int i = 0; i<skillOwners.Count; i++)
+        {
+            string fireStatus = skillOwners[i]+"";
+
+            skillAnimationList.Add(fireStatus);
+        }
+        for(int i = 0; i<skillNames.Count; i++)
+        {
+            skillAnimationList.Add(skillNames[i]);
+        }
+        var skillFireAnimationSendValue = skillAnimationList.ToArray();
+        if (skillFireNums > 0)
+        {
+            photonView.RPC("ExecuteSkillAnimation", RpcTarget.All, skillFireAnimationSendValue);
+
+            animationOK = 0;
+            yield return WaitForAnimationOK();
+        }
+        
+
+        ToCompareStep();
+
+
+        /*
+        string[] sendValue;
         int trueSkill = 0;
         List<int> skillType = new List<int>();
         
+        // get true skill num
         foreach(GameObject skillFire in skillSettedOrder)
         {
-            if(skillFire.name.Substring(0, skillFire.name.Length-1) != "")
+            if(skillFire.name != "-2")
             {
                 trueSkill++;
             }
+            // add the owner
             skillType.Add(int.Parse(skillFire.name.Substring(skillFire.name.Length - 1, 1)));
         }
         string executeSkillName = "";
@@ -414,55 +529,240 @@ public class GameManager : MonoBehaviourPunCallbacks
         foreach(GameObject skillFire in skillSettedOrder)
         {
             // unuseful skill
-            if(skillFire.name == "-2")
+            if(skillFire.name != "-2")
             {
-                skillFire.GetComponent<Animator>().SetTrigger("unuseful");
-            }
-            else
-            {
-                // control fire animation
-
-                // change fire color and burn, show character, and play skill animation
+                // change fire color and character
                 if (skillType.IndexOf(0) != -1)
                 {
-                    string[] sendValue;
                     string userID = skillFire.transform.GetComponentInParent<PlayerInfo>()
                                     .userId;
-                    // change character and fire then burn the fire
-                    
                     string professionCode = useUserIdGetPlayerGameObject[userID].
-                                            GetComponent<PlayerInfo>().professionCode+"";
+                                            GetComponent<PlayerInfo>().professionCode + "";
                     sendValue = new string[3];
                     sendValue[0] = userID;
                     sendValue[1] = professionCode;
                     sendValue[2] = skillFire.name;
 
-                    
-                    
                     photonView.RPC("ChangeCharacterSpriteAndFire", RpcTarget.All, sendValue);
-
-                    // start to play animation
-                    sendValue[1] = "New" + skillFire.name;
-
-                    animationOK = 0;
-                    photonView.RPC("StartSkillAnimationTrigger", RpcTarget.All, sendValue);
-                    
-                    yield return WaitForAnimationOK();
                 }
-                else
+            }
+            
+        }
+
+        int moveFireNum = trueSkill == 0 ? 0 : trueSkill == 1 ? 1 : trueSkill == 2 ? 2 : 0;
+        sendValue = new string[1 + moveFireNum + moveFireNum + 1 + trueSkill + 1];
+        int startIndex = 0;
+        // set skill num
+        sendValue[0] = skillSettedOrder.Count + "";
+        startIndex++;
+
+        // set userID
+        for(int i = 0; i < skillSettedOrder.Count; i++)
+        {
+            sendValue[startIndex+i] = skillSettedOrder[i].transform.
+                                      GetComponentInParent<PlayerInfo>().userId;
+        }
+        startIndex += skillSettedOrder.Count;
+        // set true skill num
+        sendValue[startIndex] = trueSkill+"";
+        startIndex++;
+
+        // set true skill name
+        int index = 0;
+        foreach (GameObject skillFire in skillSettedOrder)
+        {
+            if (skillFire.name.Substring(0, skillFire.name.Length - 1) != "-2")
+            {
+                sendValue[startIndex+index] = skillFire.name.
+                                                Substring(0, skillFire.name.Length - 1);
+                index++;
+            }
+        }
+        startIndex += index;
+        index = 0;
+        // set allSKillName
+        foreach(GameObject skillFire in skillSettedOrder)
+        {
+            sendValue[startIndex + index] = skillFire.name.
+                                                Substring(0, skillFire.name.Length - 1);
+        }
+
+        // set final result skill name
+        sendValue[startIndex] = trueSkill == 0 ? "" : trueSkill == 1 ? sendValue[startIndex - 1] :
+                                trueSkill == 2 ? "" : trueSkill == 3 ? sendValue[startIndex - 1] : "";
+        photonView.RPC("StartUseSkill", RpcTarget.All, sendValue);
+        yield return WaitForAnimationOK();
+
+
+        ToCompareStep();*/
+    }
+
+    
+    void ToCompareStep()
+    {
+
+    }
+    [PunRPC]
+    public IEnumerator ExecuteSkillAnimation(string[] skillAnimationData)
+    {
+        // if skillFireNum == 1, count = 1+1+1+1
+        // if skillFireNum == 2, count = 2+1+2+2
+        // if skillFireNum == 3, count = 3+1+3+3
+
+        if(skillAnimationData.Count() == 4)
+        {
+            string userId = skillAnimationData[0];
+            GameObject skillFire = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
+                                    GetSkillFire();
+            
+            string fireStatus = skillAnimationData[2] == "-2" ? "disappear" : "burning";
+
+            int changeToSize = skillAnimationData[2] == "-2" ? 0 : 2;
+
+            float time = 2;
+            float baseScale = skillFire.transform.localScale.x;
+            float baseTime = time;
+            int plusOrSub = changeToSize == 0 ? -1 : 1;
+
+            while (time > 0)
+            {
+                Vector3 scale = skillFire.transform.localScale;
+                scale.x += plusOrSub * baseScale / baseTime * Time.deltaTime;
+                scale.y += plusOrSub * baseScale / baseTime * Time.deltaTime;
+                scale.z += plusOrSub * baseScale / baseTime * Time.deltaTime;
+                time -= Time.deltaTime * 1;
+                yield return 1;
+            }
+
+            if (fireStatus == "burning")
+            {
+                StartCoroutine(PlaySkillAnimation(skillAnimationData[3], 1, true));
+            }
+        }
+        // two fire burn together then if true true show count animation at the same time
+        else if(skillAnimationData.Count() == 7)
+        {
+            for(int i = 0; i<2; i++)
+            {
+                string userId = skillAnimationData[i];
+                Animator fireAnimator = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
+                                        GetSkillFire().GetComponent<Animator>();
+
+                string fireStatus = skillAnimationData[3 + i] == "-2" ? "disappear" : "burning";
+                fireAnimator.SetTrigger(fireStatus);
+                if(i == 1)
                 {
-                    // burn fire, and play skill animation
-                    skillFire.GetComponent<Animator>().
-                        SetTrigger("fireUnknow");
+                    while (fireAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime != 1)
+                    {
+                        yield return 1;
+                    }
+                }
+            }
+            if (skillAnimationData[3] == "-2")
+            {
+                if (skillAnimationData[4] != "-2")
+                {
+                    StartCoroutine(PlaySkillAnimation(skillAnimationData[6], 1, true));
+                }
+            }
+            else if (skillAnimationData[3] != "-2")
+            {
+                if (skillAnimationData[4] != "-2")
+                {
+                    string conterProfession1 = skillAnimationData[3];
+                    string conterProfession2 = skillAnimationData[4];
+
+                    StartCoroutine(PlaySkillAnimation(conterProfession1, 1, false));
+                    StartCoroutine(PlaySkillAnimation(conterProfession2, 1, true));
+                }
+                else if (skillAnimationData[4] == "-2")
+                {
+                    StartCoroutine(PlaySkillAnimation(skillAnimationData[5], 1, true));
                 }
             }
         }
-        //photonView.RPC("PlaySkillAnimation", RpcTarget.All, );
+        else if(skillAnimationData.Count() == 10)
+        {
+            float trueIndex = -1;
+            for(int i = 0; i<3; i++)
+            {
+                string userId = skillAnimationData[i];
+                Animator fireAnimator = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
+                                        GetSkillFire().GetComponent<Animator>();
+                string fireStatus = skillAnimationData[4+i] == "-2" ? "disappear" : "burning";
+                fireAnimator.SetTrigger(fireStatus);
+                while (fireAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime != 1)
+                {
+                    yield return 1;
+                }
+                if (fireStatus != "disappear")
+                {
+                    // if trueIndex == 0, 0.33,
+                    // if trueIndex == 1, 0.5
+                    // if trueIndex == 2, -1
+                    if (trueIndex == -1) trueIndex = i;
+                    if (i < 2)
+                    {
+                        float keepTime = trueIndex == 0 ? 0.33f : trueIndex == 1 ? 0.5f : 1;
+                        trueIndex = -1;
+                        yield return (PlaySkillAnimation(skillAnimationData[7 + i], keepTime, false));
+                        if(keepTime != 1)
+                        {
+                            yield return ChangeVideoTransparent();
+                        }
+                    }
+                    else
+                    {
+                        yield return (PlaySkillAnimation(skillAnimationData[7 + i], 1, true));
+                    }
+                }
+            }
+        }
+        //
 
+    }
+    IEnumerator ChangeVideoTransparent()
+    {
+        Color color = showVideoObject.GetComponent<RawImage>().color;
+
+
+        float time = 1;
+        while (time > 0)
+        {
+            color.a -= (1) / 1 * Time.deltaTime;
+            showVideoObject.GetComponent<RawImage>().color = color;
+            time -= Time.deltaTime * 1;
+            yield return 1;
+        }
+        color.a = 0;
+        showVideoObject.GetComponent<RawImage>().color = color;
+    }
+    IEnumerator PlaySkillAnimation(string animationName, float playingTime, bool finalOK)
+    {
+        Color color = showVideoObject.GetComponent<RawImage>().color;
+        color.a = 1;
+        showVideoObject.GetComponent<RawImage>().color = color;
+        videoPlayer.clip = null;
+        videoPlayer.clip = useClipsNameGetClips[animationName];
+        showVideoObject.SetActive(true);
+        videoPlayer.Play();
+
+        while (videoPlayer.frame < (long)videoPlayer.frameCount * playingTime)
+        {
+            yield return 1;
+        }
+
+        if (finalOK)
+        {
+            photonView.RPC("AnimationOK", RpcTarget.MasterClient);
+        }
+        
     }
     [PunRPC]
     public void ChangeCharacterSpriteAndFire(string[] playerInfo)
     {
+        // sendValue[0] = userId; sendValue[1] = skillOwner; sendValue[2] = skillFire.name;
+
         string id = playerInfo[0];
         int professionCode = int.Parse(playerInfo[1]);
         string fireName = playerInfo[2];
@@ -471,43 +771,36 @@ public class GameManager : MonoBehaviourPunCallbacks
             sprite = allCharacterSprites[professionCode];
 
         // change fire
+        Destroy(useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().GetSkillFire());
+        /*
         useUserIdGetPlayerGameObject[id].
-            transform.Find(fireName).gameObject.SetActive(false);
-
+            transform.Find(fireName).gameObject.name = "old" + fireName;
+        useUserIdGetPlayerGameObject[id].
+            transform.Find("old"+fireName).gameObject.SetActive(false);
+        */
         Transform skillFirePosition = useUserIdGetPlayerGameObject[id].
             transform.Find("SkillFirePosition");
         GameObject newSkillFire = Instantiate(allSkillsFire[professionCode], 
                                               skillFirePosition);
-        newSkillFire.name = "New" + fireName;
-    }
-    [PunRPC]
-    public void StartSkillAnimationTrigger(string[] skillInfo)
-    {
-        // id, object name, skill name
+        newSkillFire.transform.localPosition = Vector3.zero;
+        newSkillFire.name = fireName;
 
-        string id = skillInfo[0];
-        string objectName = skillInfo[1];
-        string skillName = skillInfo[2];
-        
-        GameObject targetObject = useUserIdGetPlayerGameObject[id].transform.Find(objectName).gameObject;
-        StartCoroutine(SkillAnimation(targetObject, skillName));
+        useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().SetSkillFire(newSkillFire);
 
-    }
-    IEnumerator SkillAnimation(GameObject skillMark, string skillName)
-    {
-        while (skillMark.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).IsName("None"))
+        /*
+        if (PhotonNetwork.IsMasterClient)
         {
-            skillMark.GetComponent<Animator>().SetTrigger("burn");
-            yield return 1;
-        }
-        while (!skillMark.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).IsName("arrive"))
-        {
-            // wait for change position and burning
-            yield return 1;
-        }
-        // play video
-        photonView.RPC("AnimationOK", RpcTarget.MasterClient);
+            for(int i = 0; i<skillSettedOrder.Count; i++)
+            {
+                if (skillSettedOrder[i].name == "old"+fireName)
+                {
+                    skillSettedOrder[i] = newSkillFire;
+                    break;
+                }
+            }
+        }*/
     }
+    
     IEnumerator WaitForAnimationOK()
     {
         while(animationOK < playerNums)

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class SkillSetting : MonoBehaviour
 {
-    [SerializeField] int skillOnwer; // -1 all
+    [SerializeField] int skillOnwer; // -1 all, -2 fake skill
     [SerializeField] int skillCode;
     [SerializeField] string skillDescription;
     [SerializeField] string skillName;

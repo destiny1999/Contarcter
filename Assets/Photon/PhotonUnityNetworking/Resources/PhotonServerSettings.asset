@@ -53,6 +53,10 @@ MonoBehaviour:
   - ChangeCharacterSprite
   - StartSkillAnimationTrigger
   - ChangeCharacterSpriteAndFire
+  - StartUseSkill
+  - testing
+  - ExecuteSkillFireAnimation
+  - ExecuteSkillAnimation
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1
