@@ -22,25 +22,14 @@ public class ScaleTest : MonoBehaviour
     
     public float testColor;
     public GameObject showOtherCardsView;
+    public List<bool> testSkillTrueOrFalse;
     private void Start()
     {
         foreach(VideoClip clip in allVideoClips)
         {
             useClipsNameGetClips.Add(clip.name, clip);
         }
-        showOtherCardsView.SetActive(true);
 
-        Transform layer1 = showOtherCardsView.transform.Find("ShowCardView").Find("layer1");
-        Transform layer2 = showOtherCardsView.transform.Find("layer2");
-
-        //List<HashSet<int>> everyWhereCards = allPlayersInfo[0].GetEverywhereCards();
-        print(layer1.name);
-        int i = 1;
-        foreach (Transform child in layer1)
-        {
-            print(child.name);
-            i++;
-        }
 
     }
     // Update is called once per frame
@@ -79,21 +68,84 @@ public class ScaleTest : MonoBehaviour
         {
             StartCoroutine(ChangeVideoTransparent());
         }
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            StartCoroutine(TestVideoCutPoint());
+        }
+    }
+    IEnumerator TestVideoCutPoint()
+    {
+        videoPlayer.clip = null;
+        videoPlayer.clip = useClipsNameGetClips[testVideoName];
+        int trueIndex = -1;
+        int trueNums = 0;
+        bool allFake = true;
+        for(int i = 0; i<3; i++)
+        {
+            if (testSkillTrueOrFalse[i] == true)
+            {
+                trueNums++;
+                allFake = false;
+                if (trueIndex == -1) trueIndex = i;
+                if (i < 2)
+                {
+
+                    float keepTime = trueIndex == 0 ? 0.33f : trueIndex == 1 ? 0.5f : 1;
+                    trueIndex = -1;
+                    if (trueNums > 1) testVideoName = "random";
+                    yield return (PlaySkillAnimation(testVideoName, keepTime));
+
+                    yield return ChangeVideoTransparent();
+                }
+                else
+                {
+                    yield return (PlaySkillAnimation(testVideoName, 1));
+                    print("finished");
+                    rawImage.SetActive(false);
+                }
+            }
+            else
+            {
+                if(trueNums> 0)
+                {
+                    Color color = rawImage.GetComponent<RawImage>().color;
+                    color.a = 1;
+                    rawImage.GetComponent<RawImage>().color = color;
+                    videoPlayer.Play();
+                    if (i == 1)
+                    {
+                        while (videoPlayer.frame < (long)videoPlayer.frameCount * 0.66f - 1)
+                        {
+                            yield return 1;
+                        }
+                        videoPlayer.Pause();
+                        yield return ChangeVideoTransparent();
+                    }
+                    else if (i == 2)
+                    {
+                        while (videoPlayer.frame < (long)videoPlayer.frameCount - 1)
+                        {
+                            yield return 1;
+                        }
+                        print("finished");
+                        rawImage.SetActive(false);
+                    }
+                }
+            }
+        }
     }
     IEnumerator ChangeVideoTransparent()
     {
         Color color = rawImage.GetComponent<RawImage>().color;
 
-
         float time = 1;
         while (time > 0)
         {
-            color.a -= (1) / 1 * Time.deltaTime;
+            color.a -= (0.7f) / 1 * Time.deltaTime;
             rawImage.GetComponent<RawImage>().color = color;
             time -= Time.deltaTime * 1;
             yield return 1;
         }
-        color.a = 0;
         rawImage.GetComponent<RawImage>().color = color;
     }
 
@@ -121,7 +173,9 @@ public class ScaleTest : MonoBehaviour
     }
     IEnumerator PlaySkillAnimation(string animationName, float playingTime)
     {
-        
+        Color color = rawImage.GetComponent<RawImage>().color;
+        color.a = 1;
+        rawImage.GetComponent<RawImage>().color = color;
         videoPlayer.clip = null;
         videoPlayer.clip = useClipsNameGetClips[animationName];
         rawImage.SetActive(true);
@@ -129,12 +183,8 @@ public class ScaleTest : MonoBehaviour
 
         while (videoPlayer.frame < (long)videoPlayer.frameCount * playingTime - 1)
         {
-            print(videoPlayer.frame + " " + (long)videoPlayer.frameCount * playingTime);
             yield return 1;
         }
-
-        print("playvideo test finished");
-        rawImage.SetActive(false);
         videoPlayer.Pause();
     }
 }

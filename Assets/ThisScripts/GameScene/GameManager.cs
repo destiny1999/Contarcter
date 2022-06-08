@@ -86,6 +86,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     GameObject pendingSkill = null;
 
     int resultMagnification = 1;
+    bool banSkill = false;
     private void Awake()
     {
         Instance = this;
@@ -215,7 +216,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             skills[i].GetComponent<SkillInfo>().skillName = "";
             skills[i].GetComponent<SkillInfo>().skillDescription = "";
-            skills[i - 1].GetComponent<SkillInfo>().skillOwner = -2;
+            skills[i].GetComponent<SkillInfo>().skillOwner = -2;
         }
 
         SetCards();
@@ -362,14 +363,16 @@ public class GameManager : MonoBehaviourPunCallbacks
             //wating for animation OK...
             yield return 1;
         }
+
         animationOK = 0;
-        print("animation OK");
+
         eachStepsStatus[1] = true;
         StartCoroutine(JudgeSetSkillStatus());
         photonView.RPC("SetSkillCanBeSettedStatus", RpcTarget.All, true);
         photonView.RPC("SetCardCanBeSettedStatus", RpcTarget.All, false);
 
         eachStepsStatus[1] = true;
+
 
         StartCoroutine(SubTime(skillSettedConsiderTime, 1));
         
@@ -411,7 +414,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         // turn end
 
         photonView.RPC("CheckPendingSKill", RpcTarget.All);
-        print("into to deal result");
+
         photonView.RPC("ShowSelectedCard", RpcTarget.All);
         StartCoroutine(DealWithSkills());
     }
@@ -422,6 +425,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             pendingSkill.GetComponent<SkillInfo>().SetUse(false);
             pendingSkill.GetComponent<SkillInfo>().OnMouseUp();
+            pendingSkill.GetComponent<SkillInfo>().SetDraggingStatus(false);
             showOtherCardsView.SetActive(false);
             pendingSkill.SetActive(true);
             pendingSkill = null;
@@ -450,46 +454,35 @@ public class GameManager : MonoBehaviourPunCallbacks
         foreach(GameObject skillFire in skillSettedOrder)
         {
             var skillInfo = skillFire.name.Split('_');
-
             // setted the info into data type
-            if (skillInfo.Count() > 2)
-            {
-                userIDs.Add(skillInfo[0]);
-                skillNames.Add(skillInfo[1]);
-                skillOwners.Add(int.Parse(skillInfo[2]));
-            }
-            else
-            {
-                userIDs.Add(skillInfo[0]);
-                skillNames.Add(" ");
-                skillOwners.Add(int.Parse(skillInfo[2]));
-            }
+            userIDs.Add(skillInfo[0]);
+            skillNames.Add(skillInfo[1]);
+            skillOwners.Add(int.Parse(skillInfo[2]));
 
-            // if count < 2 mean had skill owner -2 and user id, the fake skill, other mean true skill
-            if(skillInfo.Count() > 2)
-            {
-                // skillFire.name = id + "_" + name + "_" + owner;
-                string userId = skillInfo[0];
-                string skillName = skillInfo[1];
-                int skillOwner = int.Parse(skillInfo[2]);
+            // skillFire.name = id + "_" + name + "_" + owner;
+            string userId = skillInfo[0];
+            string skillName = skillInfo[1];
+            int skillOwner = int.Parse(skillInfo[2]);
 
-                // profession skill
-                if(skillOwner != -1 && skillOwner != -2)
+            //print("skillOwner = " + skillOwner);
+
+            // profession skill
+            if (skillOwner != -1 && skillOwner != -2)
+            {
+                // deal with first use profession skill and change fire and show character
+                if (!useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().showCharacter)
                 {
-                    // deal with first use profession skill and change fire and show character
-                    if (!useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().showCharacter)
-                    {
-                        string[] sendValue = new string[3];
+                    string[] sendValue = new string[3];
 
-                        sendValue[0] = userId;
-                        sendValue[1] = skillOwner+"";
-                        sendValue[2] = skillFire.name;
+                    sendValue[0] = userId;
+                    sendValue[1] = skillOwner + "";
+                    sendValue[2] = skillFire.name;
 
-                        photonView.RPC("ChangeCharacterSpriteAndFire", RpcTarget.All, sendValue);
+                    photonView.RPC("ChangeCharacterSpriteAndFire", RpcTarget.All, sendValue);
 
-                    }
                 }
             }
+
         }
         // deal with skills
 
@@ -552,23 +545,9 @@ public class GameManager : MonoBehaviourPunCallbacks
             
             string fireStatus = skillAnimationData[2] == "-2" ? "disappear" : "burning";
 
-            int changeToSize = skillAnimationData[2] == "-2" ? 0 : 2;
+            yield return ChangeFireSize(fireStatus, skillFire);
 
-            float time = 2;
-            float baseScale = skillFire.transform.localScale.x;
-            float baseTime = time;
-            int plusOrSub = changeToSize == 0 ? -1 : 1;
-
-            while (time > 0)
-            {
-                Vector3 scale = skillFire.transform.localScale;
-                scale.x += plusOrSub * baseScale / baseTime * Time.deltaTime;
-                scale.y += plusOrSub * baseScale / baseTime * Time.deltaTime;
-                scale.z += plusOrSub * baseScale / baseTime * Time.deltaTime;
-                skillFire.transform.localScale = scale;
-                time -= Time.deltaTime * 1;
-                yield return 1;
-            }
+            
 
             if (fireStatus == "burning")
             {
@@ -589,18 +568,14 @@ public class GameManager : MonoBehaviourPunCallbacks
             for(int i = 0; i<2; i++)
             {
                 string userId = skillAnimationData[i];
-                Animator fireAnimator = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
-                                        GetSkillFire().GetComponent<Animator>();
+
+                GameObject skillFire = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
+                                    GetSkillFire();
 
                 string fireStatus = skillAnimationData[3 + i] == "-2" ? "disappear" : "burning";
-                fireAnimator.SetTrigger(fireStatus);
-                if(i == 1)
-                {
-                    while (fireAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime != 1)
-                    {
-                        yield return 1;
-                    }
-                }
+
+                yield return ChangeFireSize(fireStatus, skillFire);
+
             }
             if (skillAnimationData[3] == "-2")
             {
@@ -641,14 +616,13 @@ public class GameManager : MonoBehaviourPunCallbacks
             for(int i = 0; i<3; i++)
             {
                 string userId = skillAnimationData[i];
-                Animator fireAnimator = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
-                                        GetSkillFire().GetComponent<Animator>();
+                GameObject skillFire = useUserIdGetPlayerGameObject[userId].GetComponent<PlayerInfo>().
+                                    GetSkillFire();
+                
                 string fireStatus = skillAnimationData[4+i] == "-2" ? "disappear" : "burning";
-                fireAnimator.SetTrigger(fireStatus);
-                while (fireAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime != 1)
-                {
-                    yield return 1;
-                }
+
+                yield return ChangeFireSize(fireStatus, skillFire);
+
                 if (fireStatus != "disappear")
                 {
                     // if trueIndex == 0, 0.33,
@@ -659,19 +633,48 @@ public class GameManager : MonoBehaviourPunCallbacks
                     if (trueIndex == -1) trueIndex = i;
                     if (i < 2)
                     {
+
                         float keepTime = trueIndex == 0 ? 0.33f : trueIndex == 1 ? 0.5f : 1;
                         trueIndex = -1;
                         yield return (PlaySkillAnimation(skillAnimationData[7 + i], keepTime, false));
                         executeSkillUser = skillAnimationData[0 + i];
                         executeSKillName = skillAnimationData[7 + i];
-                        if (keepTime != 1)
-                        {
-                            yield return ChangeVideoTransparent();
-                        }
+                        yield return ChangeVideoTransparent();
                     }
                     else
                     {
                         yield return (PlaySkillAnimation(skillAnimationData[7 + i], 1, true));
+                    }
+                }
+                else
+                {
+                    skillFire.SetActive(false);
+                    if (trueNums > 0)
+                    {
+                        Color color = showVideoObject.GetComponent<RawImage>().color;
+                        color.a = 1;
+                        showVideoObject.GetComponent<RawImage>().color = color;
+                        videoPlayer.Play();
+                        if (i == 1)
+                        {
+                            while (videoPlayer.frame < (long)videoPlayer.frameCount * 0.66f - 1)
+                            {
+                                yield return 1;
+                            }
+                            videoPlayer.Pause();
+                            yield return ChangeVideoTransparent();
+                        }
+                        else if(i == 2)
+                        {
+                            while(videoPlayer.frame < (long)videoPlayer.frameCount - 1)
+                            {
+                                yield return 1;
+                            }
+                            photonView.RPC("AnimationOK", RpcTarget.MasterClient);
+                            showVideoObject.SetActive(false);
+                        }
+                        
+                        
                     }
                 }
             }
@@ -736,13 +739,45 @@ public class GameManager : MonoBehaviourPunCallbacks
                                 SkillAboutChangeValue(userIds[i]);
                             }
                             break;
+                        case "banned":
+                            photonView.RPC("SetBanSkill", RpcTarget.MasterClient, true);
+                            break;
+                        case "damaged":
+                            photonView.RPC("ChangeResultMagnification", RpcTarget.MasterClient, 0);
+                            break;
+                        case "invalid":
+                            break;
                     }
                 }
                 
             }
         }
     }
+    IEnumerator ChangeFireSize(string fireStatus, GameObject skillFire)
+    {
+        int changeToSize = fireStatus == "disappear" ? 0 : 2;
 
+        float time = 2;
+        float baseScale = skillFire.transform.localScale.x;
+        float baseTime = time;
+        int plusOrSub = changeToSize == 0 ? -1 : 1;
+
+        while (time > 0)
+        {
+            Vector3 scale = skillFire.transform.localScale;
+            scale.x += plusOrSub * baseScale / baseTime * Time.deltaTime;
+            scale.y += plusOrSub * baseScale / baseTime * Time.deltaTime;
+            scale.z += plusOrSub * baseScale / baseTime * Time.deltaTime;
+            skillFire.transform.localScale = scale;
+            time -= Time.deltaTime * 1;
+            yield return 1;
+        }
+    }
+    [PunRPC]
+    public void SetBanSkill(bool status)
+    {
+        banSkill = status;
+    }
     [PunRPC]
     public void ChangeResultMagnification(int magnification)
     {
@@ -798,12 +833,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         float time = 1;
         while (time > 0)
         {
-            color.a -= (1) / 1 * Time.deltaTime;
+            color.a -= (0.7f) / 1 * Time.deltaTime;
             showVideoObject.GetComponent<RawImage>().color = color;
             time -= Time.deltaTime * 1;
             yield return 1;
         }
-        color.a = 0;
         showVideoObject.GetComponent<RawImage>().color = color;
     }
     IEnumerator PlaySkillAnimation(string animationName, float playingTime, bool finalOK)
@@ -821,7 +855,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             yield return 1;
         }
-        
+        videoPlayer.Pause();
         if (finalOK)
         {
             photonView.RPC("AnimationOK", RpcTarget.MasterClient);
@@ -865,7 +899,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void ShowSelectedCard()
     {
-        print("to show select card");
+        
         foreach(PlayerInfo playerInfo in allPlayersInfo)
         {
             StartCoroutine(playerInfo.transform.GetComponentInChildren<SelectedCardInfo>().
@@ -879,7 +913,6 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             if(skillSettedOrder.Count == PhotonNetwork.CurrentRoom.PlayerCount)
             {
-                print("count same");
                 eachStepsStatus[1] = false;
             }
             yield return 1;
@@ -914,7 +947,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         eachStepsStatus[stepIndex] = true;
         startTimeValue = PhotonNetwork.Time;
         var remainingTime = countDownTime;
-        
+        if (!currentTime.ContainsKey("remainingTime"))
+        {
+            currentTime.Add("remainingTime", remainingTime);
+        }
+        else
+        {
+            currentTime["remainingTime"] = remainingTime;
+        }
+        PhotonNetwork.CurrentRoom.SetCustomProperties(currentTime);
         while (remainingTime > 0 && eachStepsStatus[stepIndex])
         {
             var currentTimeValue = PhotonNetwork.Time;
@@ -959,7 +1000,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         SetSelectedSkill(pendingSkillData[0], int.Parse(pendingSkillData[1]));
         allPlayersInfo[0].transform.GetComponentInChildren<SelectedCardInfo>().SetChangeValue(value);
-        //useUserIdExecuteSkill.Add()
+        showOtherCardsView.SetActive(false);
     }
     /// <summary>
     /// index = 0 mean from hand, index = 1, mean from grave

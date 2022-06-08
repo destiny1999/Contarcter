@@ -2634,7 +2634,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8527575987999386203, guid: ea7399578a1489e4892ee2266e2bdc21, type: 3}
       propertyPath: skillDescription
-      value: "\u4E0D\u8AD6\u7D50\u679C\uFF0C\u6B64\u56DE\u5408\u7121\u6CD5\u767C\u52D5\u4EFB\u4F55\u5492\u4EE4"
+      value: "\u7121\u7279\u6B8A\u6548\u679C\uFF0C\u53EF\u7528\u4F86\u62B5\u92B7\u6280\u80FD"
       objectReference: {fileID: 0}
     - target: {fileID: 9094780896809741598, guid: ea7399578a1489e4892ee2266e2bdc21, type: 3}
       propertyPath: m_Pivot.x
@@ -4470,7 +4470,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_AnchorMin.x
@@ -4478,15 +4478,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4518,11 +4518,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 108.145004
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -300
       objectReference: {fileID: 0}
     - target: {fileID: 8783089659599206126, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -4539,6 +4539,10 @@ PrefabInstance:
     - target: {fileID: 8783089659599206127, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_Name
       value: Taoist priest
+      objectReference: {fileID: 0}
+    - target: {fileID: 8783089659599206127, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8783089660500016424, guid: d51446b94029e7a409cc272d59d8cbf3, type: 3}
       propertyPath: m_Text
