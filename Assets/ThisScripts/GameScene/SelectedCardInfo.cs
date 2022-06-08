@@ -11,7 +11,7 @@ public class SelectedCardInfo : MonoBehaviour
     [SerializeField] SpriteRenderer valueMark;
     [SerializeField] public int value { get; set; }
     [SerializeField] string userID;
-
+    int changeValue = 0;
     public float changeSizeSpeed;
     float originalX;
     //Animator selectedCardInfoAnimator;
@@ -22,6 +22,23 @@ public class SelectedCardInfo : MonoBehaviour
     private void Start()
     {
         originalX = this.transform.localScale.x;
+    }
+    public void SetChangeValue(int value)
+    {
+        changeValue = value;
+    }
+    public int GetChangeValue()
+    {
+        return changeValue;
+    }
+    public void ChangeShowValue(int newValue, Sprite spriteMark)
+    {
+        value = newValue;
+        valueMark.sprite = spriteMark;
+    }
+    public int GetValue()
+    {
+        return value;
     }
     public void SetCard(Sprite frameSprite, Sprite valueMarkSprite)
     {

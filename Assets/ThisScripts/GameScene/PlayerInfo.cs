@@ -13,7 +13,16 @@ public class PlayerInfo : MonoBehaviour
     [SerializeField] GameObject skillFire;
     [SerializeField] List<GameObject> allSkills;
 
-
+    HashSet<int> handCards = new HashSet<int>();
+    HashSet<int> graveCards = new HashSet<int>();
+    List<string> swapUserIds = new List<string>();
+    private void Start()
+    {
+        for(int i = 1; i <=10; i++)
+        {
+            handCards.Add(i);
+        }
+    }
     public void SetSkillFire(GameObject fireObject)
     {
         skillFire = fireObject;
@@ -21,5 +30,26 @@ public class PlayerInfo : MonoBehaviour
     public GameObject GetSkillFire()
     {
         return skillFire;
+    }
+    public List<HashSet<int>> GetEverywhereCards()
+    {
+        List<HashSet<int>> all = new List<HashSet<int>>();
+        all.Add(handCards);
+        all.Add(graveCards);
+        return all;
+    }
+    public List<string> GetSwapUserIds()
+    {
+        return swapUserIds;
+    }
+    public void SetSwapUserIds(string user1, string user2)
+    {
+        swapUserIds.Add(user1);
+        swapUserIds.Add(user2);
+    }
+    public void UseCard(int value)
+    {
+        handCards.Remove(value);
+        graveCards.Add(value);
     }
 }

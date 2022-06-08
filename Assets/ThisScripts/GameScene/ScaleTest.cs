@@ -17,15 +17,31 @@ public class ScaleTest : MonoBehaviour
     Dictionary<string, VideoClip> useClipsNameGetClips = new Dictionary<string, VideoClip>();
     public string testVideoName;
     public GameObject rawImage;
+    [Range(0, 1)]
     public float testTime;
-    [Range(0,1)]
+    
     public float testColor;
+    public GameObject showOtherCardsView;
     private void Start()
     {
         foreach(VideoClip clip in allVideoClips)
         {
             useClipsNameGetClips.Add(clip.name, clip);
         }
+        showOtherCardsView.SetActive(true);
+
+        Transform layer1 = showOtherCardsView.transform.Find("ShowCardView").Find("layer1");
+        Transform layer2 = showOtherCardsView.transform.Find("layer2");
+
+        //List<HashSet<int>> everyWhereCards = allPlayersInfo[0].GetEverywhereCards();
+        print(layer1.name);
+        int i = 1;
+        foreach (Transform child in layer1)
+        {
+            print(child.name);
+            i++;
+        }
+
     }
     // Update is called once per frame
     void Update()
@@ -105,25 +121,20 @@ public class ScaleTest : MonoBehaviour
     }
     IEnumerator PlaySkillAnimation(string animationName, float playingTime)
     {
+        
         videoPlayer.clip = null;
         videoPlayer.clip = useClipsNameGetClips[animationName];
         rawImage.SetActive(true);
         videoPlayer.Play();
-        if (playingTime != -1)
+
+        while (videoPlayer.frame < (long)videoPlayer.frameCount * playingTime - 1)
         {
-            while (videoPlayer.frame < (long)videoPlayer.frameCount*playingTime)
-            {
-                yield return 1;
-            }
+            print(videoPlayer.frame + " " + (long)videoPlayer.frameCount * playingTime);
+            yield return 1;
         }
-        else
-        {
-            while (videoPlayer.frame != (long)videoPlayer.frameCount)
-            {
-                yield return 1;
-            }
-        }
+
         print("playvideo test finished");
+        rawImage.SetActive(false);
         videoPlayer.Pause();
     }
 }

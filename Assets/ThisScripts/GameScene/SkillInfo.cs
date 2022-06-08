@@ -31,7 +31,7 @@ public class SkillInfo : MonoBehaviour
     {
         use = status;
     }
-    private void OnMouseUp()
+    public void OnMouseUp()
     {
         if (!use)
         {
@@ -39,7 +39,17 @@ public class SkillInfo : MonoBehaviour
         }
         else
         {
-            GameManager.Instance.SetSelectedSkill(skillName, skillOwner);
+            bool showOther = GameManager.Instance.CheckShowOther(skillName);
+            if (showOther)
+            {
+                int showFrom = GameManager.Instance.CheckShowFromWhere(skillName);
+                GameManager.Instance.ShowOtherToSelect(showFrom);
+                GameManager.Instance.SetPendingSkill(skillName, skillOwner+"", this.gameObject);
+            }
+            else
+            {
+                GameManager.Instance.SetSelectedSkill(skillName, skillOwner);
+            }
             this.gameObject.SetActive(false);
             SiteManager.Instance.SetcardIn(false);
         }
