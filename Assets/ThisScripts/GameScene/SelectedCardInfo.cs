@@ -46,7 +46,7 @@ public class SelectedCardInfo : MonoBehaviour
         valueMark.sprite = valueMarkSprite;
         background.sprite = cardBack;
     }
-    public IEnumerator ShowCard()
+    public IEnumerator ShowCard(bool last)
     {
         while(this.transform.localScale.x > 0)
         {
@@ -69,6 +69,18 @@ public class SelectedCardInfo : MonoBehaviour
             if (scale.x > originalX) scale.x = originalX;
             this.transform.localScale = scale;
             yield return 1;
+        }
+        if (last)
+        {
+            // this waitTime mean when card show after N second deal with skill
+            // if no skill it will immediate into final step;
+            float waitTime = 3f;
+            while(waitTime > 0)
+            {
+                waitTime -= Time.deltaTime * 1;
+                yield return 1;
+            }
+            GameManager.Instance.SetAnimationOKToMaster();
         }
     }
 }

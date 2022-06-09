@@ -771,6 +771,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   eachStepsStatus: 0000
+  timerTitle: {fileID: 591818852}
+  timerSprite:
+  - {fileID: 21300000, guid: e945214bd04d3fa458c0efe1db0a0ae1, type: 3}
+  - {fileID: 21300000, guid: b55002dc439abdf45a848650ceaa6714, type: 3}
   timerAnimator: {fileID: 185827744}
   videoPlayer: {fileID: 997138026}
   showVideoObject: {fileID: 1385090094}
@@ -1549,7 +1553,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 52.577698}
+  m_AnchoredPosition: {x: 0, y: 52.577637}
   m_SizeDelta: {x: -323.1267, y: -384.0768}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1114678743

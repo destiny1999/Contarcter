@@ -9,7 +9,7 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 1
-    m_ConditionEvent: setSkill
+    m_ConditionEvent: turn
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 8345321185365304414}
@@ -81,7 +81,7 @@ AnimatorController:
   m_Name: Timer
   serializedVersion: 5
   m_AnimatorParameters:
-  - m_Name: setSkill
+  - m_Name: turn
     m_Type: 4
     m_DefaultFloat: 0
     m_DefaultInt: 0
