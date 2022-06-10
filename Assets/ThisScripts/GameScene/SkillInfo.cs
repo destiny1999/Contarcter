@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SkillInfo : MonoBehaviour
 {
@@ -73,11 +74,15 @@ public class SkillInfo : MonoBehaviour
             transform.position = curPosition;
         }
     }
-    private void OnMouseEnter()
+    public void OnMouseEnter()
     {
         if (showDetail)
         {
-
+            GameManager.Instance.SetSkillInfoView(true);
         }
+    }
+    public void OnMouseExit()
+    {
+        GameManager.Instance.SetSkillInfoView(false);
     }
 }

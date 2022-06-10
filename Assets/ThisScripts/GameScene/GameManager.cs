@@ -65,7 +65,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     [SerializeField] double skillSettedConsiderTime = 11;
 
     [SerializeField] List<GameObject> skillSettedOrder;
-
+    [SerializeField] GameObject skillInfoView;
+    [SerializeField] GameObject skillInfoWhenExecute;
     // 0 card selected consider, 1 skilled selected consider
     [SerializeField] List<bool> eachStepsStatus;
 
@@ -91,6 +92,12 @@ public class GameManager : MonoBehaviourPunCallbacks
     bool banSkill = false;
     string executeSkillUser = "";
     string executeSKillName = "";
+
+    [SerializeField][Tooltip("0 en Name, 1 ch Name, 2 description")]
+    List<TextAsset> fileList;
+    // may can get this data from file or database
+    Dictionary<string, string> useSkillNameGetShowSKillName = new Dictionary<string, string>();
+    Dictionary<string, string> useSkillNameGetDescription = new Dictionary<string, string>();
     private void Awake()
     {
         Instance = this;
@@ -110,15 +117,28 @@ public class GameManager : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
+        //
+        var skillEnName = fileList[0].text.Split(',').ToArray();
+        var skillChName = fileList[1].text.Split(',').ToArray();
+        var descriptions = fileList[2].text.Split(',').ToArray();
 
+        for(int i = 0; i < skillEnName.Count(); i++)
+        {
+            useSkillNameGetShowSKillName.Add(skillEnName[i], skillChName[i]);
+            useSkillNameGetDescription.Add(skillEnName[i], descriptions[i]);
+        }
+
+        // set video clip
         foreach (VideoClip clip in allVideoClips)
         {
             useClipsNameGetClips.Add(clip.name, clip);
         }
 
+        // get self data
         professionInfo = (HashTable)PhotonNetwork.LocalPlayer.CustomProperties["professionInfo"];
         characterCode = (int)professionInfo["professsion"];
 
+        // wait for other
         prepareStep = true;
         if (PhotonNetwork.IsMasterClient)
         {
@@ -139,6 +159,13 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         SetSelfPlayerData();
         SetAllPlayerInfo();
+    }
+    private void Update()
+    {
+        if (skillInfoView.activeSelf)
+        {
+            skillInfoView.transform.position = Input.mousePosition;
+        }   
     }
     IEnumerator WaitAllPlayerLoading()
     {
@@ -266,6 +293,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         // when get skill fire should know skill owner to judge show the character or not
         // and should know the skill name or code to execute the skill
 
+        if (useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().showCharacter)
+        {
+            fireMark = useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().professionCode;
+        }
 
         GameObject skillFire = Instantiate(allSkillsFire[fireMark], skillFirePosition);
         skillFire.transform.localPosition = Vector3.zero;
@@ -425,6 +456,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         // turn end
 
         photonView.RPC("CheckPendingSKill", RpcTarget.All);
+        photonView.RPC("SetSkillCanBeSettedStatus", RpcTarget.All, false);
         animationOK = 0;
         photonView.RPC("ShowSelectedCard", RpcTarget.All);
         yield return WaitForAnimationOK();
@@ -439,13 +471,16 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         if (pendingSkill != null)
         {
-            pendingSkill.GetComponent<SkillInfo>().SetUse(false);
-            pendingSkill.GetComponent<SkillInfo>().OnMouseUp();
-            pendingSkill.GetComponent<SkillInfo>().SetDraggingStatus(false);
-            showOtherCardsView.SetActive(false);
-            pendingSkill.SetActive(true);
-            pendingSkill = null;
+            CancelSkill();
         }
+    }
+    public void CancelSkill()
+    {
+        pendingSkill.GetComponent<SkillInfo>().SetUse(false);
+        pendingSkill.GetComponent<SkillInfo>().OnMouseUp();
+        showOtherCardsView.SetActive(false);
+        pendingSkill.SetActive(true);
+        pendingSkill = null;
     }
     IEnumerator DealWithSkills()
     {
@@ -535,13 +570,41 @@ public class GameManager : MonoBehaviourPunCallbacks
             yield return WaitForAnimationOK();
         }
 
+
+
         if (executeSKillName != "")
         {
+            photonView.RPC("SetExeCuteSkillInfo",RpcTarget.All, executeSKillName);
+
             animationOK = 0;
             photonView.RPC("ExecuteSkill", RpcTarget.All);
             yield return WaitForAnimationOK();
         }
+
+        // look at final result 3sec
+        float checkFinalStepTimes = 3f;
+        while(checkFinalStepTimes > 0)
+        {
+            checkFinalStepTimes -= Time.deltaTime * 1;
+            yield return 1;
+        }
+
         yield return ToCompareStep();
+    }
+    [PunRPC]
+    public void SetExeCuteSkillInfo(string skillName)
+    {
+        print("set execute skill info");
+        string showName = useSkillNameGetShowSKillName[skillName];
+        string description = useSkillNameGetDescription[skillName];
+
+        print("show name = " + showName);
+        print("description = " + description);
+
+        skillInfoWhenExecute.transform.Find("SkillImage").GetComponent<Image>().sprite = UseSkillNameGetSprite(skillName);
+        skillInfoView.transform.Find("Image").Find("Name").GetComponent<Text>().text = showName;
+        skillInfoView.transform.Find("Image").Find("Description").GetComponent<Text>().text = description;
+        skillInfoWhenExecute.SetActive(true);
     }
     [PunRPC]
     public IEnumerator ExecuteSkill()
@@ -730,6 +793,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         // record score
         // close card
+        // close skillshow info view
         // initial data
         // call turn start
         string[] sendValue = new string[2];
@@ -737,6 +801,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         sendValue[1] = gainScore + "";
         photonView.RPC("AddScore", RpcTarget.All, sendValue);
         photonView.RPC("CloseCard", RpcTarget.All);
+        skillInfoWhenExecute.SetActive(false);
+        skillInfoView.SetActive(false);
         photonView.RPC("InitialData", RpcTarget.All);
         // change timer situation
         animationOK = 0;
@@ -765,6 +831,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     public void CloseCard()
     {
         print(" to close card");
+        allPlayersInfo[0].SendToGrave();
+
         for(int i = 0; i < allPlayersInfo.Count(); i++)
         {
             Transform selectedCardRegion = allPlayersInfo[i].transform.GetComponentInChildren<SelectedCardInfo>().transform;
@@ -1110,6 +1178,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         useUserIdGetPlayerGameObject[id].transform.Find("Character").GetComponent<SpriteRenderer>().
             sprite = allCharacterSprites[professionCode];
 
+        useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().showCharacter = true;
+
         // change fire
         Destroy(useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().GetSkillFire());
 
@@ -1234,12 +1304,14 @@ public class GameManager : MonoBehaviourPunCallbacks
         pendingSkillData = new List<string>();
         pendingSkillData.Add(skillName);
         pendingSkillData.Add(skillOwner);
+        
     }
     public void SetSelectedOtherCard(int value)
     {
         SetSelectedSkill(pendingSkillData[0], int.Parse(pendingSkillData[1]));
         allPlayersInfo[0].transform.GetComponentInChildren<SelectedCardInfo>().SetChangeValue(value);
         showOtherCardsView.SetActive(false);
+        pendingSkill = null;
     }
     /// <summary>
     /// index = 0 mean from hand, index = 1, mean from grave
@@ -1275,8 +1347,12 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         int index = -1;
         if (showFromHand.Contains(checkName)) index = 0;
-        else if (showFromHand.Contains(checkName)) index = 1;
+        else if (showFromGrave.Contains(checkName)) index = 1;
         return index;
+    }
+    public void SetSkillInfoView(bool status)
+    {
+        skillInfoView.SetActive(status);
     }
     public override void OnRoomPropertiesUpdate(HashTable propertiesThatChanged)
     {

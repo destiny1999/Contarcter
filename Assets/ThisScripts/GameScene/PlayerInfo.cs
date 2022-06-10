@@ -10,6 +10,7 @@ public class PlayerInfo : MonoBehaviour
     [SerializeField] public int winGameCount { get; set; }
     [SerializeField] public bool showCharacter { get; set; }
     [SerializeField] public int professionCode { get; set; }
+    [SerializeField] public int willToGraveValue { get; set; }
     [SerializeField] GameObject skillFire;
     [SerializeField] List<GameObject> allSkills;
 
@@ -50,6 +51,11 @@ public class PlayerInfo : MonoBehaviour
     public void UseCard(int value)
     {
         handCards.Remove(value);
-        graveCards.Add(value);
+        willToGraveValue = value;
+    }
+    public void SendToGrave()
+    {
+        graveCards.Add(willToGraveValue);
+        willToGraveValue = -1;
     }
 }

@@ -137,8 +137,9 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
         SceneManager.LoadScene("Lobby");
     }
 
-    public void OnClickPrepare()
+    public void OnClickPrepare(GameObject reselectButton)
     {
+        
         if(skillBlocks[0].sprite == null || skillBlocks[1].sprite == null)
         {
             tipsView.transform.Find("Text").GetComponent<Text>().text = "Check role and skills";
@@ -147,6 +148,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             return;
         }
         HideAllSkills();
+        reselectButton.SetActive(!reselectButton.activeSelf);
         buttonPrepare.GetComponentInChildren<Text>().text = buttonPrepare.GetComponentInChildren<Text>().text
            == "Prepare" ? "Cancel" : "Prepare";
 
@@ -176,6 +178,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             }
             
         }
+        
     }
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)

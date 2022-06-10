@@ -23,6 +23,12 @@ public class ScaleTest : MonoBehaviour
     public float testColor;
     public GameObject showOtherCardsView;
     public List<bool> testSkillTrueOrFalse;
+
+    public TextAsset skillNameFile;
+    public TextAsset skillDescriptionFile;
+    public TextAsset skillEnNameFile;
+    Dictionary<string, string> useNameGetName = new Dictionary<string, string>();
+    Dictionary<string, string> useNameGetDescription = new Dictionary<string, string>();
     private void Start()
     {
         foreach(VideoClip clip in allVideoClips)
@@ -71,6 +77,27 @@ public class ScaleTest : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.D))
         {
             StartCoroutine(TestVideoCutPoint());
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TestGetFileData();
+        }
+    }
+    void TestGetFileData()
+    {
+        var enName = skillEnNameFile.text.Split(',');
+        var chName = skillNameFile.text.Split(',');
+        var description = skillDescriptionFile.text.Split(',');
+        for(int i = 0; i<enName.Length; i++)
+        {
+            useNameGetDescription.Add(enName[i], description[i]);
+            useNameGetName.Add(enName[i], chName[i]);
+        }
+
+        foreach(KeyValuePair<string,string> keyValue in useNameGetDescription)
+        {
+            print("enName =  " + keyValue.Key);
+            print("description = " + keyValue.Value);
         }
     }
     IEnumerator TestVideoCutPoint()

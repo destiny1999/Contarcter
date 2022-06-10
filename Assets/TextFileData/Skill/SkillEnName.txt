@@ -1,0 +1,1 @@
+replace,random,cave,swords,swap,banned,invalid,damaged
