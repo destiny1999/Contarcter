@@ -44,12 +44,23 @@ public class SkillInfo : MonoBehaviour
             if (showOther)
             {
                 int showFrom = GameManager.Instance.CheckShowFromWhere(skillName);
-                GameManager.Instance.ShowOtherToSelect(showFrom);
+                // hand and grave
+                if(showFrom == 0 || showFrom == 1)
+                {
+                    GameManager.Instance.ShowOtherToSelect(showFrom);
+                }
+                else if(showFrom == 2)// players
+                {
+                    GameManager.Instance.ShowPlayersToSelect();
+                }
                 GameManager.Instance.SetPendingSkill(skillName, skillOwner+"", this.gameObject);
             }
             else
             {
-                GameManager.Instance.SetSelectedSkill(skillName, skillOwner);
+                if (this.gameObject.activeSelf)
+                {
+                    GameManager.Instance.SetSelectedSkill(skillName, skillOwner);
+                }
             }
             this.gameObject.SetActive(false);
             SiteManager.Instance.SetcardIn(false);

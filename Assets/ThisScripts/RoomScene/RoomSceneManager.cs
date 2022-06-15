@@ -99,12 +99,16 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
     {
         if (PhotonNetwork.IsMasterClient)
         {
-            buttonPrepare.gameObject.SetActive(false);
-            buttonStartGame.gameObject.SetActive(true);
-
+            //buttonPrepare.gameObject.SetActive(false);
+            if(buttonPrepare.GetComponentInChildren<Text>().text == "Cancel")
+            {
+                buttonStartGame.gameObject.SetActive(true);
+            }
+            
+            /*
             HashTable customProperties = PhotonNetwork.LocalPlayer.CustomProperties;
             ((HashTable)customProperties["prepare"])["prepare"] = false;
-            PhotonNetwork.LocalPlayer.SetCustomProperties(customProperties);
+            PhotonNetwork.LocalPlayer.SetCustomProperties(customProperties);*/
         }
     }
 
@@ -169,16 +173,14 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
         
         PhotonNetwork.LocalPlayer.SetCustomProperties(customProperties);
 
-        if (testMode)
+        if (PhotonNetwork.IsMasterClient && buttonPrepare.GetComponentInChildren<Text>().text == "Cancel")
         {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                buttonPrepare.transform.gameObject.SetActive(false);
-                buttonStartGame.transform.gameObject.SetActive(true);
-            }
-            
+            buttonStartGame.gameObject.SetActive(true);
         }
-        
+        else
+        {
+            buttonStartGame.gameObject.SetActive(false);
+        }
     }
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)

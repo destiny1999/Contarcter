@@ -43,10 +43,17 @@ public class PlayerInfo : MonoBehaviour
     {
         return swapUserIds;
     }
-    public void SetSwapUserIds(string user1, string user2)
+    public void ResetSwapUserIds()
     {
-        swapUserIds.Add(user1);
-        swapUserIds.Add(user2);
+        swapUserIds = new List<string>();
+    }
+    public void SetSwapUserId(string userId)
+    {
+        swapUserIds.Add(userId);
+        if(swapUserIds.Count == 2)
+        {
+            GameManager.Instance.SetOtherActionOKToSetSkillCard(0);
+        }
     }
     public void UseCard(int value)
     {

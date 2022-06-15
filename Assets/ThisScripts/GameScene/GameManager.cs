@@ -84,6 +84,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     [SerializeField] List<string> shouldShowOtherSkillName;
     [SerializeField] List<string> showFromHand;
     [SerializeField] List<string> showFromGrave;
+    [SerializeField] List<string> showPlayers;
+    [SerializeField] GameObject playerSelectedView;
     List<string> pendingSkillData;
     [SerializeField] GameObject showOtherCardsView;
     GameObject pendingSkill = null;
@@ -92,6 +94,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     bool banSkill = false;
     string executeSkillUser = "";
     string executeSKillName = "";
+
+    bool thisTurnSetCard = false;
 
     [SerializeField][Tooltip("0 en Name, 1 ch Name, 2 description")]
     List<TextAsset> fileList;
@@ -146,11 +150,23 @@ public class GameManager : MonoBehaviourPunCallbacks
             //startTimeValue = PhotonNetwork.Time;
             //StartCoroutine(SubTime());
             // set site info and wait all player loading OK
-
+            Debug.Log("player count = " + PhotonNetwork.CurrentRoom.PlayerCount);
+            foreach(KeyValuePair<int, Player> pair in PhotonNetwork.CurrentRoom.Players)
+            {
+                print(" key = " + pair.Key);
+            }
+            int key = 0;
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[i + 1].UserId,
-                    PhotonNetwork.CurrentRoom.Players[i + 1]);
+                while (!PhotonNetwork.CurrentRoom.Players.ContainsKey(key + 1))
+                {
+                    key++;
+                }
+                print(" get key = " + (key + 1));
+                useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[key + 1].UserId,
+                    PhotonNetwork.CurrentRoom.Players[key + 1]);
+                Debug.Log(i + " OK");
+                key++;
             }
 
             int siteCode = Random.Range(0, 1);
@@ -189,11 +205,16 @@ public class GameManager : MonoBehaviourPunCallbacks
     void SetAllPlayerInfo()
     {
         int localIndex = -1;
+        int key = 0;
         for (int i = 0; i < playerNums; i++)
         {
+            while (!PhotonNetwork.CurrentRoom.Players.ContainsKey(key + 1))
+            {
+                key++;
+            }
             allPlayersInfo[i].GetComponent<PlayerInfo>().userId =
-                PhotonNetwork.CurrentRoom.Players[i + 1].UserId;
-            if (PhotonNetwork.LocalPlayer.UserId == PhotonNetwork.CurrentRoom.Players[i + 1].UserId)
+                PhotonNetwork.CurrentRoom.Players[key + 1].UserId;
+            if (PhotonNetwork.LocalPlayer.UserId == PhotonNetwork.CurrentRoom.Players[key + 1].UserId)
             {
                 localIndex = i;
             }
@@ -201,6 +222,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             allPlayersInfo[i].GetComponent<PlayerInfo>().winTurnCount = 0;
             allPlayersInfo[i].GetComponent<PlayerInfo>().score = 0;
             allPlayersInfo[i].GetComponent<PlayerInfo>().showCharacter = false;
+            key++;
         }
         if (localIndex != 0)
         {
@@ -313,6 +335,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
     public void SetSelectedCard(int value)
     {
+        thisTurnSetCard = true;
         string[] sendValue = new string[3];
         sendValue[0] = PhotonNetwork.LocalPlayer.UserId;
         sendValue[1] = value + "";
@@ -355,9 +378,21 @@ public class GameManager : MonoBehaviourPunCallbacks
             if (settedCards == playerNums)
             {
                 eachStepsStatus[0] = false;
-                StartCoroutine(ToSetSkillStep());
-
                 settedCards = 0;
+                if (!banSkill)
+                {
+                    StartCoroutine(ToSetSkillStep());
+                }
+                else
+                {
+                    photonView.RPC("SetBanSkill", RpcTarget.All, false);
+                    skillSettedOrder = new List<GameObject>();
+                    StartCoroutine(ToDealResultStep());
+                    
+                }
+                
+
+                
             }
         }
     }
@@ -501,7 +536,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         List<int> skillOwners = new List<int>();
         int skillFireNums = skillSettedOrder.Count;
 
-
+        print("skill settedorder count = " + skillSettedOrder.Count());
 
         foreach (GameObject skillFire in skillSettedOrder)
         {
@@ -697,9 +732,12 @@ public class GameManager : MonoBehaviourPunCallbacks
         List<int> values = new List<int>();
         for (int i = 0; i < playerNums; i++)
         {
+            
             int value = allPlayersInfo[i].transform.GetComponentInChildren<SelectedCardInfo>().value;
+            print(" value = " + value + " min = " + min + " max = " + max);
             if (value > max)
             {
+                if (max != 0 && max < min) min = max;
                 max = value;
                 maxId = allPlayersInfo[i].userId;
             }
@@ -708,7 +746,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                 min = value;
                 minId = allPlayersInfo[i].userId;
             }
-            else if (value == max && value == min)
+            else if (value == max && value == min && i == playerNums -1)
             {
                 threeSame = true;
             }
@@ -745,7 +783,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                     dealNums++;
                     sendValue = new string[2];
                     sendValue[0] = allPlayersInfo[i].userId;
-                    sendValue[1] = dealNums == playerNums ? "last" : "normal";
+                    sendValue[1] = dealNums == playerNums-1 ? "last" : "normal";
                     photonView.RPC("ChangeCardTransparent", RpcTarget.All, sendValue);
                     if (dealNums == 2) break;
                 }
@@ -768,23 +806,19 @@ public class GameManager : MonoBehaviourPunCallbacks
                     dealNums++;
                     sendValue = new string[2];
                     sendValue[0] = allPlayersInfo[i].userId;
-                    sendValue[1] = dealNums == playerNums ? "last" : "normal";
+                    sendValue[1] = dealNums == playerNums - 1 ? "last" : "normal";
                     photonView.RPC("ChangeCardTransparent", RpcTarget.All, sendValue);
-                    if (dealNums == playerNums) break;
                 }
-                else
-                {
-                    if (testMode && playerNums == 1)
-                    {
-                        photonView.RPC("AnimationOK", RpcTarget.MasterClient);
-                    }
-                }
+            }
+            if(testMode && playerNums == 1)
+            {
+                animationOK++;
             }
             winId = maxId;
             yield return WaitForAnimationOK();
         }
 
-        yield return ToFinialStep(winId, addValue);
+        yield return ToFinialStep(winId, addValue * resultMagnification);
     }
     IEnumerator ToFinialStep(string winId, int gainScore)
     {
@@ -796,13 +830,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         // close skillshow info view
         // initial data
         // call turn start
+
         string[] sendValue = new string[2];
         sendValue[0] = winId;
         sendValue[1] = gainScore + "";
-        photonView.RPC("AddScore", RpcTarget.All, sendValue);
+        if (winId != "")
+        {
+            photonView.RPC("AddScore", RpcTarget.All, sendValue);
+        }
         photonView.RPC("CloseCard", RpcTarget.All);
-        skillInfoWhenExecute.SetActive(false);
-        skillInfoView.SetActive(false);
         photonView.RPC("InitialData", RpcTarget.All);
         // change timer situation
         animationOK = 0;
@@ -813,6 +849,13 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void InitialData()
     {
+        executeSKillName = "";
+        executeSkillUser = "";
+        thisTurnSetCard = false;
+        resultMagnification = 1;
+        skillInfoWhenExecute.SetActive(false);
+        skillInfoView.SetActive(false);
+
         DeletedAllSkillFire();
         SetCardCanBeSettedStatus(true);
     }
@@ -891,7 +934,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         // if skillFireNum == 1, count = 1+1+1+1
         // if skillFireNum == 2, count = 2+1+2+2
         // if skillFireNum == 3, count = 3+1+3+3
-
+        print("count = " + skillAnimationData.Count());
         if (skillAnimationData.Count() == 4)
         {
             string userId = skillAnimationData[0];
@@ -942,6 +985,9 @@ public class GameManager : MonoBehaviourPunCallbacks
                 }
                 else if (skillAnimationData[4] == "-2")
                 {
+                    print("two true fire ok");
+                    executeSkillUser = "";
+                    executeSKillName = "";
                     photonView.RPC("AnimationOK", RpcTarget.MasterClient);
                 }
             }
@@ -952,6 +998,9 @@ public class GameManager : MonoBehaviourPunCallbacks
                     string conterProfession1 = skillAnimationData[3];
                     string conterProfession2 = skillAnimationData[4];
 
+                    executeSkillUser = "";
+                    executeSKillName = "";
+                    photonView.RPC("AnimationOK", RpcTarget.MasterClient);
                     // maybe should use conter animation or show a powerful block and say a sentence
                     //StartCoroutine(PlaySkillAnimation(conterProfession1, 1, false));
                     //StartCoroutine(PlaySkillAnimation(conterProfession2, 1, true));
@@ -1044,6 +1093,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                 {
                     executeSkillUser = "";
                     executeSKillName = "";
+                    photonView.RPC("AnimationOK", RpcTarget.MasterClient);
                 }
             }
 
@@ -1289,6 +1339,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         //photonView.RPC("SetSkillCanBeSettedStatus", RpcTarget.All, false);
     }
+    [PunRPC]
+    public void AutoSummonRandomCard()
+    {
+        if (!thisTurnSetCard)
+        {
+            HashSet<int> cardsInHand = allPlayersInfo[0].GetEverywhereCards()[0];
+            var cardArray = cardsInHand.ToArray();
+            int value = cardArray[Random.Range(0, cardArray.Count())];
+            SetSelectedCard(value);
+        }
+    }
     public bool CheckShowOther(string checkName)
     {
         return shouldShowOtherSkillName.Contains(checkName);
@@ -1313,6 +1374,34 @@ public class GameManager : MonoBehaviourPunCallbacks
         showOtherCardsView.SetActive(false);
         pendingSkill = null;
     }
+    /// <summary>
+    /// if hide index == 0, hide select player
+    /// </summary>
+    /// <param name="hideViewIndex"></param>
+    public void SetOtherActionOKToSetSkillCard(int hideViewIndex)
+    {
+        SetSelectedSkill(pendingSkillData[0], int.Parse(pendingSkillData[1]));
+        if(hideViewIndex == 0)
+        {
+            playerSelectedView.SetActive(false);
+        }
+        pendingSkill = null;
+    }
+    public void ShowPlayersToSelect()
+    {
+        playerSelectedView.SetActive(true);
+        foreach(Transform child in playerSelectedView.transform)
+        {
+            child.gameObject.SetActive(true);
+        }
+        playerSelectedView.transform.Find("Self").GetComponent<Image>().sprite =
+            GameObject.Find("SelfPlayer").transform.Find("Character").GetComponent<SpriteRenderer>().sprite;
+        playerSelectedView.transform.Find("Left").GetComponent<Image>().sprite =
+            GameObject.Find("LeftPlayer").transform.Find("Character").GetComponent<SpriteRenderer>().sprite;
+        playerSelectedView.transform.Find("Right").GetComponent<Image>().sprite =
+            GameObject.Find("RightPlayer").transform.Find("Character").GetComponent<SpriteRenderer>().sprite;
+    }
+
     /// <summary>
     /// index = 0 mean from hand, index = 1, mean from grave
     /// </summary>
@@ -1348,11 +1437,33 @@ public class GameManager : MonoBehaviourPunCallbacks
         int index = -1;
         if (showFromHand.Contains(checkName)) index = 0;
         else if (showFromGrave.Contains(checkName)) index = 1;
+        else if (showPlayers.Contains(checkName)) index = 2;
         return index;
     }
     public void SetSkillInfoView(bool status)
     {
         skillInfoView.SetActive(status);
+    }
+    /// <summary>
+    /// index = 0, self, index = 1, left, index = 2, right
+    /// </summary>
+    /// <param name="index"></param>
+    public void SetSwapUser(int index)
+    {
+        string id = "";
+        switch (index)
+        {
+            case 0:
+                id = allPlayersInfo[0].userId;
+                break;
+            case 1:
+                id = GameObject.Find("LeftPlayer").GetComponent<PlayerInfo>().userId;
+                break;
+            case 2:
+                id = GameObject.Find("RightPlayer").GetComponent<PlayerInfo>().userId;
+                break;
+        }
+        allPlayersInfo[0].SetSwapUserId(id);
     }
     public override void OnRoomPropertiesUpdate(HashTable propertiesThatChanged)
     {
