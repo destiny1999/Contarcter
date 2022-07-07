@@ -104,6 +104,14 @@ public class GameManager : MonoBehaviourPunCallbacks
     Dictionary<string, string> useSkillNameGetDescription = new Dictionary<string, string>();
     private void Awake()
     {
+        if (!Screen.fullScreen)
+        {
+            float w = Screen.width;
+            float h = 1080 * w / 1920;
+            Screen.SetResolution((int)w, (int)h, false);
+        }
+
+
         Instance = this;
         if (testMode)
         {
@@ -317,7 +325,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         if (useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().showCharacter)
         {
-            fireMark = useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().professionCode;
+            fireMark = characterCode;
         }
 
         GameObject skillFire = Instantiate(allSkillsFire[fireMark], skillFirePosition);
@@ -721,8 +729,9 @@ public class GameManager : MonoBehaviourPunCallbacks
         print("to compare step");
         // only mast client can into this
         // 
-        int max = 0;
-        int min = 100;
+        int max = -1;
+        int min = 11;
+        int mid = -1;
         int addValue = 0;
         string maxId = "";
         string minId = "";
@@ -730,31 +739,75 @@ public class GameManager : MonoBehaviourPunCallbacks
         bool threeSame = false;
         string winId = "";
         List<int> values = new List<int>();
-        for (int i = 0; i < playerNums; i++)
+        for(int i = 0; i<playerNums; i++)
         {
-            
             int value = allPlayersInfo[i].transform.GetComponentInChildren<SelectedCardInfo>().value;
-            print(" value = " + value + " min = " + min + " max = " + max);
+            values.Add(value);
+        }
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            int value = values[i];
             if (value > max)
             {
-                if (max != 0 && max < min) min = max;
+                if (max != -1)
+                {
+                    if (min == 11)
+                    {
+                        min = max;
+                        minId = maxId;
+                    }
+                    else
+                    {
+                        mid = max;
+                    }
+                }
                 max = value;
                 maxId = allPlayersInfo[i].userId;
             }
-            else if (value < min)
+            else if (value == max)
             {
-                min = value;
-                minId = allPlayersInfo[i].userId;
+                if (min == 11)
+                {
+                    min = max;
+                    minId = maxId;
+                }
+                else
+                {
+                    mid = max;
+                }
+                max = value;
+                maxId = allPlayersInfo[i].userId;
             }
-            else if (value == max && value == min && i == playerNums -1)
+            else if (value < max)
             {
-                threeSame = true;
+                if (min == 11)
+                {
+                    min = value;
+                    minId = allPlayersInfo[i].userId;
+                }
+                else
+                {
+                    if (value < min)
+                    {
+                        mid = min;
+                        min = value;
+                        minId = allPlayersInfo[i].userId;
+                    }
+                    else
+                    {
+                        mid = value;
+                    }
+                }
             }
-            else if (value == max && min != 0)
-            {
-                twoMax = true;
-            }
-            values.Add(value);
+        }
+        if (max == min)
+        {
+            threeSame = true;
+        }
+        else if (max == mid)
+        {
+            twoMax = true;
         }
         if (threeSame)
         {

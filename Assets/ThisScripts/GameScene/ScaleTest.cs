@@ -29,6 +29,9 @@ public class ScaleTest : MonoBehaviour
     public TextAsset skillEnNameFile;
     Dictionary<string, string> useNameGetName = new Dictionary<string, string>();
     Dictionary<string, string> useNameGetDescription = new Dictionary<string, string>();
+
+    public List<int> values = new List<int>();
+
     private void Start()
     {
         foreach(VideoClip clip in allVideoClips)
@@ -81,6 +84,80 @@ public class ScaleTest : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E))
         {
             TestGetFileData();
+        }
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            TestCompare();
+        }
+    }
+    void TestCompare()
+    {
+
+        int max = -1;
+        int mid = -1;
+        int min = 11;
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            int value = values[i];
+            if(value > max)
+            {
+                if(max != -1)
+                {
+                    if(min == 11)
+                    {
+                        min = max;
+                    }
+                    else
+                    {
+                        mid = max;
+                    }
+                }
+                max = value;
+            }
+            else if(value == max)
+            {
+                if(min == 11)
+                {
+                    min = max;
+                }
+                else
+                {
+                    mid = max;
+                }
+                max = value;
+            }
+            else if(value < max)
+            {
+                if(min == 11)
+                {
+                    min = value;
+                }
+                else
+                {
+                    if(value < min)
+                    {
+                        mid = min;
+                        min = value;
+                    }
+                    else
+                    {
+                        mid = value;
+                    }
+                }
+            }
+        }
+        if(max == min)
+        {
+            print("three same");
+        }
+        else if(max == mid)
+        {
+            print("two max");
+        }
+        else
+        {
+            print("three different");
         }
     }
     void TestGetFileData()
