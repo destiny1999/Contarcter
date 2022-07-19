@@ -14,16 +14,24 @@ public class PlayerInfo : MonoBehaviour
     [SerializeField] GameObject skillFire;
     [SerializeField] List<GameObject> allSkills;
 
+    public TextMesh scoreText;
+
     HashSet<int> handCards = new HashSet<int>();
     HashSet<int> graveCards = new HashSet<int>();
     List<string> swapUserIds = new List<string>();
     private void Start()
     {
-        for(int i = 1; i <=10; i++)
+        ResetCards();
+    }
+    public void ResetCards()
+    {
+        graveCards = new HashSet<int>();
+        for (int i = 1; i <= 10; i++)
         {
             handCards.Add(i);
         }
     }
+
     public void SetSkillFire(GameObject fireObject)
     {
         skillFire = fireObject;

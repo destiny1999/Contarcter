@@ -32,6 +32,10 @@ public class ScaleTest : MonoBehaviour
 
     public List<int> values = new List<int>();
 
+
+    public int addNum = 10;
+    public Text scoreText;
+
     private void Start()
     {
         foreach(VideoClip clip in allVideoClips)
@@ -88,6 +92,30 @@ public class ScaleTest : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F))
         {
             TestCompare();
+        }
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            StartCoroutine(ChangeValue());
+        }
+    }
+    IEnumerator ChangeValue()
+    {
+        float addValve = 1 / addNum;
+        float passTime = 0f;
+        int score = int.Parse(scoreText.text);
+        while(addNum > 0)
+        {
+            /*
+            passTime += Time.deltaTime * 1;
+            if(passTime >= addValve)
+            {
+                
+            }*/
+            addNum--;
+            score++;
+            scoreText.text = score + "";
+            passTime = 0;
+            yield return 0;
         }
     }
     void TestCompare()

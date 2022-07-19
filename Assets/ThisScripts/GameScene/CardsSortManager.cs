@@ -50,4 +50,12 @@ public class CardsSortManager : MonoBehaviour
             card.GetComponent<CardSetting>().SetCanDragStatus(status);
         }
     }
+    public int GetCardsCount()
+    {
+        return allCards.Count;
+    }
+    public List<GameObject> GetAllCards()
+    {
+        return allCards;
+    }
 }

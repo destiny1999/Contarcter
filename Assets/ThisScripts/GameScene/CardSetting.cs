@@ -99,4 +99,8 @@ public class CardSetting : MonoBehaviour
     {
         use = status;
     }
+    public int GetValue()
+    {
+        return value;
+    }
 }

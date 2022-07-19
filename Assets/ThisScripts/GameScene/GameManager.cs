@@ -12,6 +12,9 @@ using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
+    [SerializeField] int timesInTurn;// one part ten turn;
+    [SerializeField] int timesInPart;// one game three part;
+
     int playerNums = 3;
     [SerializeField] int testPlayerNuums;
     [SerializeField] bool testMode = false;
@@ -96,7 +99,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     string executeSKillName = "";
 
     bool thisTurnSetCard = false;
-
     [SerializeField][Tooltip("0 en Name, 1 ch Name, 2 description")]
     List<TextAsset> fileList;
     // may can get this data from file or database
@@ -194,15 +196,52 @@ public class GameManager : MonoBehaviourPunCallbacks
     IEnumerator WaitAllPlayerLoading()
     {
         // wait all player loading OK.
+        print("wait loading...");
         while (loadingOKPlayer < playerNums)
         {
             yield return 1;
         }
-        print("all player OK");
+        print("loading ok");
+        StartCoroutine(NewPartStart());
+    }
+    IEnumerator NewPartStart()
+    {
+        print("new part start");
+        // only master client
+        timesInPart++;
+        animationOK = 0;
+        photonView.RPC("ResetPlayersCards", RpcTarget.All);
+        while (animationOK < playerNums)
+        {
+            //wating for animation OK...
+            yield return 1;
+        }
+        animationOK = 0;
         TurnStart();
+    }
+    [PunRPC]
+    void ResetPlayersCards()
+    {
+        // reset each player card position (set)
+        for (int i = 0; i < allPlayersInfo.Count; i++)
+        {
+            allPlayersInfo[i].ResetCards();
+        }
+
+        List<GameObject> cards = decks.GetComponent<CardsSortManager>().GetAllCards();
+
+        int cardValue = 1;
+        foreach(GameObject card in cards)
+        {
+            card.GetComponent<CardSetting>().SetValue(cardValue, allCardValueSprite[cardValue-1]);
+            cardValue++;
+            card.SetActive(true);
+        }
+        photonView.RPC("AnimationOK", RpcTarget.MasterClient);
     }
     void TurnStart()
     {
+        timesInTurn++;
         print("turn start");
         // only master client into this
         photonView.RPC("SetCardCanBeSettedStatus", RpcTarget.All, true);
@@ -396,11 +435,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                     photonView.RPC("SetBanSkill", RpcTarget.All, false);
                     skillSettedOrder = new List<GameObject>();
                     StartCoroutine(ToDealResultStep());
-                    
-                }
-                
-
-                
+                }   
             }
         }
     }
@@ -455,8 +490,6 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         timer.text = "";
         StartCoroutine(SubTime(skillSettedConsiderTime, 1));
-
-
     }
     /// <summary>
     /// if code == 0, from summon to skill, if code == 1, from skill to summon
@@ -574,7 +607,6 @@ public class GameManager : MonoBehaviourPunCallbacks
                     sendValue[2] = skillFire.name;
 
                     photonView.RPC("ChangeCharacterSpriteAndFire", RpcTarget.All, sendValue);
-
                 }
             }
 
@@ -612,8 +644,6 @@ public class GameManager : MonoBehaviourPunCallbacks
             animationOK = 0;
             yield return WaitForAnimationOK();
         }
-
-
 
         if (executeSKillName != "")
         {
@@ -737,6 +767,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         string minId = "";
         bool twoMax = false;
         bool threeSame = false;
+        bool twoSmall = false;
         string winId = "";
         List<int> values = new List<int>();
         for(int i = 0; i<playerNums; i++)
@@ -808,6 +839,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         else if (max == mid)
         {
             twoMax = true;
+        }
+        else if(mid == min)
+        {
+            twoSmall = true;
         }
         if (threeSame)
         {
@@ -887,8 +922,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         string[] sendValue = new string[2];
         sendValue[0] = winId;
         sendValue[1] = gainScore + "";
+        print("win ID = " + winId);
         if (winId != "")
         {
+            print("add value = " + gainScore);
             photonView.RPC("AddScore", RpcTarget.All, sendValue);
         }
         photonView.RPC("CloseCard", RpcTarget.All);
@@ -897,7 +934,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         animationOK = 0;
         photonView.RPC("StartTimerAnimation", RpcTarget.All, 1);
         yield return WaitForAnimationOK();
-        TurnStart();
+        if(timesInTurn < 10)
+        {
+            TurnStart();
+        }
+        else
+        {
+            if(timesInPart < 3)
+            {
+                NewPartStart();
+            }
+        }
     }
     [PunRPC]
     public void InitialData()
@@ -945,9 +992,27 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void AddScore(string[] sendValue)
     {
+        print("into add score");
         string id = sendValue[0];
         int score = int.Parse(sendValue[1]);
-        useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().score += score;
+        //useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().score += score;
+
+        StartCoroutine(ChangeShowScore(id, score));
+
+        
+    }
+    IEnumerator ChangeShowScore(string id, int addScore)
+    {
+        print("change show score");
+        int weight = addScore > 0 ? 1 : -1;
+        while (Mathf.Abs(addScore) > 0)
+        {
+            addScore -= weight;
+            useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().score += weight;
+            useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().scoreText.text =
+            useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().score + "";
+            yield return 0;
+        }
     }
     [PunRPC]
     public IEnumerator ChangeCardTransparent(string[] sendValue)
@@ -1400,7 +1465,16 @@ public class GameManager : MonoBehaviourPunCallbacks
             HashSet<int> cardsInHand = allPlayersInfo[0].GetEverywhereCards()[0];
             var cardArray = cardsInHand.ToArray();
             int value = cardArray[Random.Range(0, cardArray.Count())];
+            foreach(Transform card in decks.transform)
+            {
+                if(card.GetComponent<CardSetting>().GetValue() == value)
+                {
+                    card.gameObject.SetActive(false);
+                    break;
+                }
+            }
             SetSelectedCard(value);
+            CardsSortManager.Instance.SortCard();
         }
     }
     public bool CheckShowOther(string checkName)
