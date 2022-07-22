@@ -9,6 +9,7 @@ using Photon.Realtime;
 using UnityEngine.Video;
 using System;
 using Random = UnityEngine.Random;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
@@ -104,6 +105,10 @@ public class GameManager : MonoBehaviourPunCallbacks
     // may can get this data from file or database
     Dictionary<string, string> useSkillNameGetShowSKillName = new Dictionary<string, string>();
     Dictionary<string, string> useSkillNameGetDescription = new Dictionary<string, string>();
+
+    public Transform winnerCharacterPosition;
+    public float winnerMoveSpeed = 100f;
+    public int testScore = 0;
     private void Awake()
     {
         if (!Screen.fullScreen)
@@ -160,11 +165,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             //startTimeValue = PhotonNetwork.Time;
             //StartCoroutine(SubTime());
             // set site info and wait all player loading OK
-            Debug.Log("player count = " + PhotonNetwork.CurrentRoom.PlayerCount);
-            foreach(KeyValuePair<int, Player> pair in PhotonNetwork.CurrentRoom.Players)
-            {
-                print(" key = " + pair.Key);
-            }
+
             int key = 0;
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
@@ -172,10 +173,9 @@ public class GameManager : MonoBehaviourPunCallbacks
                 {
                     key++;
                 }
-                print(" get key = " + (key + 1));
                 useUserIdGetPlayer.Add(PhotonNetwork.CurrentRoom.Players[key + 1].UserId,
                     PhotonNetwork.CurrentRoom.Players[key + 1]);
-                Debug.Log(i + " OK");
+                //Debug.Log(i + " OK");
                 key++;
             }
 
@@ -196,17 +196,17 @@ public class GameManager : MonoBehaviourPunCallbacks
     IEnumerator WaitAllPlayerLoading()
     {
         // wait all player loading OK.
-        print("wait loading...");
+        //print("wait loading...");
         while (loadingOKPlayer < playerNums)
         {
             yield return 1;
         }
-        print("loading ok");
+        //print("loading ok");
         StartCoroutine(NewPartStart());
     }
     IEnumerator NewPartStart()
     {
-        print("new part start");
+        //print("new part start");
         // only master client
         timesInPart++;
         animationOK = 0;
@@ -216,6 +216,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             //wating for animation OK...
             yield return 1;
         }
+        timesInTurn = 0;
         animationOK = 0;
         TurnStart();
     }
@@ -234,15 +235,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         foreach(GameObject card in cards)
         {
             card.GetComponent<CardSetting>().SetValue(cardValue, allCardValueSprite[cardValue-1]);
+            card.GetComponent<CardSetting>().NewPartResetCardPosotion();
             cardValue++;
             card.SetActive(true);
         }
+        CardsSortManager.Instance.SortCard();
         photonView.RPC("AnimationOK", RpcTarget.MasterClient);
     }
     void TurnStart()
     {
         timesInTurn++;
-        print("turn start");
+        //print("turn start");
         // only master client into this
         photonView.RPC("SetCardCanBeSettedStatus", RpcTarget.All, true);
         timer.text = "";
@@ -500,7 +503,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     IEnumerator StartTimerAnimation(int code)
     {
         //string animationStatus = code == 0 ? "setSkill" : "summon";
-        print("in timer animation");
         while (timerAnimator.GetCurrentAnimatorStateInfo(0).IsName("None"))
         {
             timerAnimator.SetBool("turn", true);
@@ -560,7 +562,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
     IEnumerator DealWithSkills()
     {
-        print("deal with skill");
+        //print("deal with skill");
         // only master into this function
         // check skill count
         // check skill useful nums, determine which skill will be execute
@@ -577,7 +579,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         List<int> skillOwners = new List<int>();
         int skillFireNums = skillSettedOrder.Count;
 
-        print("skill settedorder count = " + skillSettedOrder.Count());
+        //print("skill settedorder count = " + skillSettedOrder.Count());
 
         foreach (GameObject skillFire in skillSettedOrder)
         {
@@ -667,12 +669,12 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void SetExeCuteSkillInfo(string skillName)
     {
-        print("set execute skill info");
+        //print("set execute skill info");
         string showName = useSkillNameGetShowSKillName[skillName];
         string description = useSkillNameGetDescription[skillName];
 
-        print("show name = " + showName);
-        print("description = " + description);
+        //print("show name = " + showName);
+        //print("description = " + description);
 
         skillInfoWhenExecute.transform.Find("SkillImage").GetComponent<Image>().sprite = UseSkillNameGetSprite(skillName);
         skillInfoView.transform.Find("Image").Find("Name").GetComponent<Text>().text = showName;
@@ -756,7 +758,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     IEnumerator ToCompareStep()
     {
-        print("to compare step");
+        //print("to compare step");
         // only mast client can into this
         // 
         int max = -1;
@@ -846,7 +848,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         if (threeSame)
         {
-            print("three same");
+            //print("three same");
             string[] sendValue;
             animationOK = 0;
             for (int i = 0; i < playerNums; i++)
@@ -860,7 +862,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else if (twoMax)
         {
-            print("two max");
+            //print("two max");
             string[] sendValue;
             animationOK = 0;
             int dealNums = 0;
@@ -882,7 +884,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            print("three different or two small");
+            //print("three different or two small");
             string[] sendValue;
             animationOK = 0;
             int dealNums = 0;
@@ -910,7 +912,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
     IEnumerator ToFinialStep(string winId, int gainScore)
     {
-        print("to final step");
+        //print("to final step");
         // only master client can into this 
 
         // record score
@@ -922,10 +924,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         string[] sendValue = new string[2];
         sendValue[0] = winId;
         sendValue[1] = gainScore + "";
-        print("win ID = " + winId);
+
         if (winId != "")
         {
-            print("add value = " + gainScore);
+            //print("add value = " + gainScore);
             photonView.RPC("AddScore", RpcTarget.All, sendValue);
         }
         photonView.RPC("CloseCard", RpcTarget.All);
@@ -942,10 +944,128 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             if(timesInPart < 3)
             {
-                NewPartStart();
+                StartCoroutine(NewPartStart());
+            }
+            else
+            {
+                string winnerID = GetWinnerID();
+                if (winnerID != "")
+                {
+                    float waitTime = 1f;
+                    while (waitTime > 0f)
+                    {
+                        waitTime -= Time.deltaTime * 1;
+                        yield return 1;
+                    }
+                    animationOK = 0;
+                    photonView.RPC("ShowWinnerAnimation", RpcTarget.All, winnerID);
+                    yield return WaitForAnimationOK();
+
+                    BackToRoom();
+                }
+                else
+                {
+                    StartCoroutine(NewPartStart());
+                }
+                
+
+                // game end
+                // show the scoreboard
+                // after click button back to room
             }
         }
     }
+    [PunRPC]
+    IEnumerator ShowWinnerAnimation(string winnerID)
+    {
+        GameObject winnerCharacter = useUserIdGetPlayerGameObject[winnerID].transform.Find("Character").gameObject;
+        winnerCharacter.GetComponent<SpriteRenderer>().sortingOrder = 100;
+
+        while(Vector3.Distance(winnerCharacter.transform.position, winnerCharacterPosition.position) > 0.1f)
+        {
+            winnerCharacter.transform.position = Vector3.MoveTowards(winnerCharacter.transform.position,
+                                                                     winnerCharacterPosition.position,
+                                                                     winnerMoveSpeed * Time.deltaTime);
+            yield return 1;
+        }
+
+        winnerCharacter.transform.position = winnerCharacterPosition.position;
+
+        float zoominValue = winnerCharacter.transform.localScale.x + 4f;
+
+        while ( winnerCharacter.transform.localScale.x < zoominValue)
+        {
+            winnerCharacter.transform.localScale =
+                new Vector3(winnerCharacter.transform.localScale.x + 0.01f,
+                            winnerCharacter.transform.localScale.y + 0.01f,
+                            winnerCharacter.transform.localScale.z + 0.01f
+                            );
+            yield return 1;
+        }
+
+        float waitTime = 3f;
+        while(waitTime > 0f)
+        {
+            waitTime -= Time.deltaTime * 1;
+            yield return 1;
+        }
+
+        photonView.RPC("AnimationOK", RpcTarget.MasterClient);
+    }
+
+    string GetWinnerID()
+    {
+        int max1 = 0;
+        int max2 = 0;
+        string winnerID = "";
+        for(int i = 0; i<playerNums; i++)
+        {
+            int score = allPlayersInfo[i].score;
+            if (testScore != 0) score = testScore;
+            if(max1 == 0)
+            {
+                max1 = score;
+                print("max1 = " + max1);
+                winnerID = allPlayersInfo[i].userId;
+            }
+            else if(score >= max1)
+            {
+                max2 = max1;
+                max1 = score;
+                winnerID = allPlayersInfo[i].userId;
+            }
+            else if(score < max1)
+            {
+                if(max2 == 0)
+                {
+                    max2 = score;
+                }
+                else if(max2 < score)
+                {
+                    max2 = score;
+                }
+            }
+        }
+        print(max1 + " " + max2);
+        if(max1 == max2)
+        {
+            winnerID = "";
+        }
+        return winnerID;
+    }
+    public void BackToRoom()
+    {
+        for(int i = 1; i<=PhotonNetwork.CurrentRoom.PlayerCount; i++)
+        {
+            HashTable customProperties = PhotonNetwork.LocalPlayer.CustomProperties;
+
+            ((HashTable)customProperties["prepare"])["prepare"] = false;
+
+            PhotonNetwork.CurrentRoom.Players[i].SetCustomProperties(customProperties);
+        }
+        SceneManager.LoadScene("RoomScene");
+    }
+
     [PunRPC]
     public void InitialData()
     {
@@ -973,7 +1093,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void CloseCard()
     {
-        print(" to close card");
         allPlayersInfo[0].SendToGrave();
 
         for(int i = 0; i < allPlayersInfo.Count(); i++)
@@ -992,7 +1111,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void AddScore(string[] sendValue)
     {
-        print("into add score");
         string id = sendValue[0];
         int score = int.Parse(sendValue[1]);
         //useUserIdGetPlayerGameObject[id].GetComponent<PlayerInfo>().score += score;
@@ -1003,7 +1121,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
     IEnumerator ChangeShowScore(string id, int addScore)
     {
-        print("change show score");
         int weight = addScore > 0 ? 1 : -1;
         while (Mathf.Abs(addScore) > 0)
         {
@@ -1017,7 +1134,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public IEnumerator ChangeCardTransparent(string[] sendValue)
     {
-        print("change card transparent");
         string userId = sendValue[0];
         List<Transform> targets = useUserIdGetPlayerGameObject[userId].transform.GetComponentInChildren<SelectedCardInfo>().transform
                                     .GetComponentsInChildren<Transform>().ToList();
@@ -1052,7 +1168,6 @@ public class GameManager : MonoBehaviourPunCallbacks
         // if skillFireNum == 1, count = 1+1+1+1
         // if skillFireNum == 2, count = 2+1+2+2
         // if skillFireNum == 3, count = 3+1+3+3
-        print("count = " + skillAnimationData.Count());
         if (skillAnimationData.Count() == 4)
         {
             string userId = skillAnimationData[0];
@@ -1103,7 +1218,6 @@ public class GameManager : MonoBehaviourPunCallbacks
                 }
                 else if (skillAnimationData[4] == "-2")
                 {
-                    print("two true fire ok");
                     executeSkillUser = "";
                     executeSKillName = "";
                     photonView.RPC("AnimationOK", RpcTarget.MasterClient);
@@ -1372,7 +1486,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void ShowSelectedCard()
     {
-        print("show cards");
         int index = 0;
         bool last = false;
         foreach(PlayerInfo playerInfo in allPlayersInfo)

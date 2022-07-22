@@ -42,6 +42,8 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
     {
         professionInfo = new HashTable();
         PhotonNetwork.AutomaticallySyncScene = true;
+        //((HashTable)PhotonNetwork.LocalPlayer.CustomProperties["prepare"])["prepare"] = false;
+
         InitRoomInfo();
     }
     private void Update()
@@ -120,6 +122,10 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
             playerObject.GetComponent<PlayerRoomStatus>().
                 SetStatus(targetPlayer.NickName, targetPlayer.UserId,
                            (bool)((HashTable)targetPlayer.CustomProperties["prepare"])["prepare"]);
+            if(PhotonNetwork.CurrentRoom.PlayerCount == PhotonNetwork.CurrentRoom.MaxPlayers)
+            {
+                PhotonNetwork.CurrentRoom.IsVisible = false;
+            }
         }
         else
         {
@@ -131,12 +137,16 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
                     break;
                 }
             }
+            if (PhotonNetwork.CurrentRoom.PlayerCount < PhotonNetwork.CurrentRoom.MaxPlayers)
+            {
+                PhotonNetwork.CurrentRoom.IsVisible = true;
+            }
         }
     }
     
     public void OnClickLeaveRoom()
     {
-        PhotonNetwork.AutomaticallySyncScene = false;
+        //PhotonNetwork.AutomaticallySyncScene = false;
         PhotonNetwork.LeaveRoom();
         SceneManager.LoadScene("Lobby");
     }
@@ -202,6 +212,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
         if (testMode)
         {
             SceneManager.LoadScene("GameScene");
+            PhotonNetwork.CurrentRoom.IsVisible = false;
             return;
         }
         else
@@ -223,6 +234,7 @@ public class RoomSceneManager : MonoBehaviourPunCallbacks
                     }
                 }
             }
+            PhotonNetwork.CurrentRoom.IsVisible = false;
             SceneManager.LoadScene("GameScene");
         }
 

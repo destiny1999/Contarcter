@@ -7,6 +7,7 @@ public class CardSetting : MonoBehaviour
     Vector3 screenPoint;
     Vector3 offset;
     Vector3 originalPosition;
+    Vector3 partStartPosition;
     bool use = false;
     [SerializeField] int value;
     [SerializeField] SpriteRenderer valueMark;
@@ -17,6 +18,7 @@ public class CardSetting : MonoBehaviour
     public bool testDrag = false;
     private void Start()
     {
+        partStartPosition = this.transform.localPosition;
         cardAni = this.GetComponent<Animator>();
         SetOriginalPosition();
     }
@@ -102,5 +104,9 @@ public class CardSetting : MonoBehaviour
     public int GetValue()
     {
         return value;
+    }
+    public void NewPartResetCardPosotion()
+    {
+        this.transform.localPosition = partStartPosition;
     }
 }

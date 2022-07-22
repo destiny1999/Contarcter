@@ -67,6 +67,7 @@ public class LobbySceneManager : MonoBehaviourPunCallbacks
         if(roomName.Length > 0 && PhotonNetwork.LocalPlayer.NickName.Length > 0)
         {
             RoomOptions options = new RoomOptions();
+            options.MaxPlayers = 3;
             options.PublishUserId = true;
             PhotonNetwork.CreateRoom(roomName, options);
         }
